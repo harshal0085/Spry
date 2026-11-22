@@ -278,7 +278,8 @@ private fun MusicTogetherContent(
                 contentPadding = PaddingValues(top = topPadding + MusicTogetherSpacing.sm, bottom = MusicTogetherSpacing.lg),
                 verticalArrangement = Arrangement.spacedBy(MusicTogetherSpacing.sm),
             ) {
-                item(contentType = "status") {
+                item(contentType = "friends") { moe.rukamori.archivetune.friends.FriendsCard() }
+            item(contentType = "status") {
                     StatusCard(
                         status = model.status,
                         sessionShare = model.sessionShare,
@@ -345,6 +346,7 @@ private fun MusicTogetherContent(
                 ),
             verticalArrangement = Arrangement.spacedBy(MusicTogetherSpacing.sm),
         ) {
+            item(contentType = "friends") { moe.rukamori.archivetune.friends.FriendsCard() }
             item(contentType = "status") {
                 StatusCard(
                     status = model.status,

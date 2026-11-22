@@ -78,6 +78,7 @@ class App :
     @OptIn(DelicateCoroutinesApi::class)
     override fun onCreate() {
         super.onCreate()
+        moe.rukamori.archivetune.friends.SpryFriends.init(this)
         val t0 = if (BuildConfig.DEBUG) moe.rukamori.archivetune.playback.PlaybackTiming.markProcessStart() else 0L
         if (BuildConfig.DEBUG) {
             moe.rukamori.archivetune.innertube.InnerTube.TimingHook.onRetry = { attempt, delayMs ->

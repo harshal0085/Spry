@@ -128,3 +128,5 @@ opencode.json
 
 # Spry local build logs
 build*.log
+
+app/google-services.json

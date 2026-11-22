@@ -110,6 +110,7 @@ internal fun MusicService.startTogetherHost(
 
         server.start(port)
         togetherServer = server
+        moe.rukamori.archivetune.friends.SpryFriends.publishHosting(sessionId, sessionKey, port)
 
         scope.launch(SilentHandler) {
             togetherSessionState.value =
@@ -819,7 +820,10 @@ internal fun MusicService.leaveTogether() {
     scope.launch(SilentHandler) {
         togetherSessionState.value = moe.rukamori.archivetune.together.TogetherSessionState.Idle
     }
-    ioScope.launch(SilentHandler) { stopTogetherInternal() }
+    ioScope.launch(SilentHandler) {
+        stopTogetherInternal()
+        moe.rukamori.archivetune.friends.SpryTunnel.stopGuest()
+    }
 }
 
 internal fun MusicService.updateTogetherSettings(settings: moe.rukamori.archivetune.together.TogetherRoomSettings) {
@@ -1141,6 +1145,7 @@ internal fun MusicService.startTogetherHeartbeat(
 }
 
 internal suspend fun MusicService.stopTogetherInternal() {
+    moe.rukamori.archivetune.friends.SpryFriends.unpublishHosting()
     togetherBroadcastJob?.cancel()
     togetherBroadcastJob = null
 

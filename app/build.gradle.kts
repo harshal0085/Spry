@@ -143,6 +143,23 @@ android {
             buildConfigField("long", "DISCORD_APPLICATION_ID_LONG", "${discordApplicationIdLong}L")
             buildConfigField("String", "DISCORD_REDIRECT_SCHEME", "\"$discordRedirectScheme\"")
             manifestPlaceholders["discordRedirectScheme"] = discordRedirectScheme
+            // Spry friends: Firebase reads these resources at startup (same as the google-services plugin,
+            // which doesn't support this AGP). The json is private, kept out of git.
+            val gs = file("google-services.json")
+            if (gs.exists()) {
+                val j = groovy.json.JsonSlurper().parse(gs) as Map<*, *>
+                val p = j["project_info"] as Map<*, *>
+                val c = (j["client"] as List<*>).map { it as Map<*, *> }.first {
+                    ((it["client_info"] as Map<*, *>)["android_client_info"] as Map<*, *>)["package_name"] == "com.spry.player"
+                }
+                val web = (c["oauth_client"] as List<*>).map { it as Map<*, *> }.first { it["client_type"] == 3 }
+                resValue("string", "google_app_id", (c["client_info"] as Map<*, *>)["mobilesdk_app_id"].toString())
+                resValue("string", "google_api_key", ((c["api_key"] as List<*>)[0] as Map<*, *>)["current_key"].toString())
+                resValue("string", "project_id", p["project_id"].toString())
+                resValue("string", "gcm_defaultSenderId", p["project_number"].toString())
+                resValue("string", "firebase_database_url", p["firebase_url"].toString())
+                resValue("string", "default_web_client_id", web["client_id"].toString())
+            }
         }
         create("foss") {
             dimension = "distribution"
@@ -248,6 +265,7 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+        resValues = true
         prefab = true
     }
 
@@ -309,6 +327,15 @@ implementation(libs.androidx.foundation.layout)
     implementation(libs.datastore)
     implementation(libs.work.runtime)
     implementation("androidx.browser:browser:1.10.0")
+
+    // Spry friends: Google sign-in + Firebase (auth, realtime database)
+    implementation(platform("com.google.firebase:firebase-bom:34.4.0"))
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-database")
+    implementation("androidx.credentials:credentials:1.5.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.5.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:${libs.versions.kotlinxCoroutines.get()}")
 
     implementation(libs.compose.runtime)
     implementation(libs.compose.foundation)

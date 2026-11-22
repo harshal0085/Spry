@@ -393,6 +393,8 @@ fun BoxScope.GlobalDialogsHost(
                 ).zIndex(10f),
     )
 
+    moe.rukamori.archivetune.friends.VibeRequestDialog()
+
     pendingBackupRestoreUri?.let { uri ->
         BackupRestoreFromIntentDialog(
             uri = uri,

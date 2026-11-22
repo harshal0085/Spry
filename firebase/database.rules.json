@@ -1,0 +1,71 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        "username": {
+          ".validate": "newData.isString() && newData.parent().parent().parent().child('usernames').child(newData.val()).val() === auth.uid"
+        },
+        "$other": { ".validate": false }
+      }
+    },
+    "usernames": {
+      "$name": {
+        ".read": "auth != null",
+        ".write": "auth != null && ((!data.exists() && newData.val() === auth.uid) || (data.val() === auth.uid && !newData.exists()))",
+        ".validate": "$name.matches(/^[a-z0-9_]{3,20}$/)"
+      }
+    },
+    "requests": {
+      "$to": {
+        ".read": "auth != null && auth.uid === $to",
+        "$from": {
+          ".write": "auth != null && ((auth.uid === $from && $from !== $to && (!newData.exists() || newData.val() === root.child('users').child(auth.uid).child('username').val())) || (auth.uid === $to && !newData.exists()))"
+        }
+      }
+    },
+    "friends": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        "$f": {
+          ".write": "auth != null && (auth.uid === $uid || auth.uid === $f) && (!newData.exists() || (auth.uid === $uid && root.child('requests').child($uid).child($f).exists()) || (auth.uid === $f && root.child('requests').child($f).child($uid).exists()))",
+          ".validate": "newData.isString()"
+        }
+      }
+    },
+    "presence": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('friends').child(auth.uid).child($uid).exists())",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "sessions": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('friends').child(auth.uid).child($uid).exists())",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "vibe": {
+      "$host": {
+        ".read": "auth != null && auth.uid === $host",
+        "$guest": {
+          ".read": "auth != null && auth.uid === $guest",
+          ".write": "auth != null && (auth.uid === $host || (auth.uid === $guest && root.child('friends').child($host).child($guest).exists() && (!newData.exists() || newData.child('ok').val() === false)))"
+        }
+      }
+    },
+    "tunnel": {
+      "$host": {
+        ".read": "auth != null && auth.uid === $host",
+        ".write": "auth != null && auth.uid === $host",
+        "$conn": {
+          ".read": "auth != null && data.child('guest').val() === auth.uid",
+          ".write": "auth != null && (data.exists() ? data.child('guest').val() === auth.uid : newData.child('guest').val() === auth.uid) && root.child('friends').child($host).child(auth.uid).exists()",
+          "up":   { "$m": { ".validate": "newData.isString() && newData.val().length < 500000" } },
+          "down": { "$m": { ".validate": "newData.isString() && newData.val().length < 500000" } }
+        }
+      }
+    }
+  }
+}
