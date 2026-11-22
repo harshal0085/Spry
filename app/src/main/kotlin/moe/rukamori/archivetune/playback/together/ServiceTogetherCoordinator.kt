@@ -19,6 +19,7 @@ import moe.rukamori.archivetune.playback.queues.ListQueue
 import moe.rukamori.archivetune.playback.queues.Queue
 import moe.rukamori.archivetune.together.AddTrackMode
 import moe.rukamori.archivetune.together.ControlAction
+import moe.rukamori.archivetune.together.TogetherGuestLocalPause
 import moe.rukamori.archivetune.together.TogetherPlaybackSync
 import moe.rukamori.archivetune.together.TogetherRole
 import moe.rukamori.archivetune.together.TogetherRoomSettings
@@ -173,6 +174,8 @@ internal class ServiceTogetherCoordinator(
         force: Boolean = false,
     ) {
         val pid = configCollector.togetherSelfParticipantId ?: return
+        // The join placeholder carries nothing to play; applying it would only pause us.
+        if (state.sentAtElapsedRealtimeMs == 0L && state.queue.isEmpty()) return
         val now = SystemClock.elapsedRealtime()
 
         val pending = delegate.getPendingGuestControl()
@@ -208,6 +211,16 @@ internal class ServiceTogetherCoordinator(
             return
         }
 
+        // Spry: a guest may pause just their own phone. Keep tracking the host silently; play resyncs.
+        if (TogetherGuestLocalPause.active && !force) {
+            configCollector.togetherLastAppliedRoomStateSentAtElapsedMs = sentAt
+            configCollector.togetherLastRemoteAppliedPlayWhenReady = false
+            configCollector.togetherSessionState.value =
+                TogetherSessionState.Joined(role = TogetherRole.Guest, sessionId = state.sessionId, selfParticipantId = pid, roomState = state)
+            return
+        }
+        val wantPlaying = state.isPlaying && !TogetherGuestLocalPause.active
+
         val targetPos =
             TogetherPlaybackSync.targetPositionMs(
                 state = state,
@@ -220,7 +233,7 @@ internal class ServiceTogetherCoordinator(
             val player = playerProvider()
             android.util.Log.i(
                 "SpryTogether",
-                "room state playing=${state.isPlaying} idx=${state.currentIndex} pos=${state.positionMs} target=$targetPos local=${player.currentPosition} localPlaying=${player.playWhenReady} online=${configCollector.togetherIsOnlineSession}",
+                "room state playing=${wantPlaying} idx=${state.currentIndex} pos=${state.positionMs} target=$targetPos local=${player.currentPosition} localPlaying=${player.playWhenReady} online=${configCollector.togetherIsOnlineSession}",
             )
             configCollector.togetherApplyingRemote = true
             configCollector.togetherSuppressEchoUntilElapsedMs =
@@ -262,7 +275,7 @@ internal class ServiceTogetherCoordinator(
                     player.prepare()
                     player.repeatMode = state.repeatMode
                     player.shuffleModeEnabled = state.shuffleEnabled
-                    player.playWhenReady = state.isPlaying
+                    player.playWhenReady = wantPlaying
                     configCollector.togetherLastRemoteAppliedIndex = startIndex
                 } else {
                     val index =
@@ -278,27 +291,27 @@ internal class ServiceTogetherCoordinator(
                         if (player.shuffleModeEnabled != state.shuffleEnabled) player.shuffleModeEnabled = state.shuffleEnabled
                         player.seekTo(index, targetPos)
                         player.prepare()
-                        player.playWhenReady = state.isPlaying
+                        player.playWhenReady = wantPlaying
                     } else {
-                        val playbackStateChanged = player.playWhenReady != state.isPlaying
+                        val playbackStateChanged = player.playWhenReady != wantPlaying
                         if (player.repeatMode != state.repeatMode) player.repeatMode = state.repeatMode
                         if (player.shuffleModeEnabled != state.shuffleEnabled) player.shuffleModeEnabled = state.shuffleEnabled
-                        if (playbackStateChanged) player.playWhenReady = state.isPlaying
+                        if (playbackStateChanged) player.playWhenReady = wantPlaying
                         val shouldSeekForDrift =
                             TogetherPlaybackSync.shouldSeekForDrift(
                                 currentPositionMs = player.currentPosition,
                                 targetPositionMs = targetPos,
-                                isPlaying = state.isPlaying,
+                                isPlaying = wantPlaying,
                                 isOnlineSession = configCollector.togetherIsOnlineSession,
                             )
-                        if (shouldSeekForDrift || (playbackStateChanged && !state.isPlaying)) {
+                        if (shouldSeekForDrift || (playbackStateChanged && !wantPlaying)) {
                             player.seekTo(targetPos)
                             player.prepare()
                         }
                     }
                     configCollector.togetherLastRemoteAppliedIndex = index
                 }
-                configCollector.togetherLastRemoteAppliedPlayWhenReady = state.isPlaying
+                configCollector.togetherLastRemoteAppliedPlayWhenReady = wantPlaying
                 configCollector.togetherLastAppliedRoomStateSentAtElapsedMs = sentAt
 
                 configCollector.togetherSessionState.value =

@@ -121,7 +121,20 @@ internal class PlayerEventFanout(
             events.contains(EVENT_PLAY_WHEN_READY_CHANGED)
         ) {
             if (!joined.roomState.settings.allowGuestsToControlPlayback) {
-                scope.launch(SilentHandler) { queueDelegate.applyRemoteRoomState(joined.roomState, force = true) }
+                // Spry: guests can't control the host, but may pause their own phone; play rejoins the host's position.
+                val playWhenReady = player.playWhenReady
+                val isEcho =
+                    togetherPlaybackEchoPolicy.isPlayWhenReadyEcho(
+                        snapshot = togetherEchoSnapshot,
+                        playWhenReady = playWhenReady,
+                        nowElapsedMs = SystemClock.elapsedRealtime(),
+                    )
+                if (!isEcho) {
+                    moe.rukamori.archivetune.together.TogetherGuestLocalPause.active = !playWhenReady
+                    if (playWhenReady) {
+                        scope.launch(SilentHandler) { queueDelegate.applyRemoteRoomState(joined.roomState, force = true) }
+                    }
+                }
             } else {
                 val now = SystemClock.elapsedRealtime()
                 val playWhenReady = player.playWhenReady

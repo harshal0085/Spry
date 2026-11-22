@@ -9,6 +9,12 @@ package moe.rukamori.archivetune.together
 
 import kotlin.math.abs
 
+/** Spry: a guest paused their own phone. Host updates are tracked but not played until they press play. */
+internal object TogetherGuestLocalPause {
+    @Volatile
+    var active = false
+}
+
 internal object TogetherPlaybackSync {
     const val BroadcastIntervalMs = 500L
 
@@ -27,7 +33,12 @@ internal object TogetherPlaybackSync {
         !force &&
             sentAtElapsedRealtimeMs > 0L &&
             lastAppliedSentAtElapsedRealtimeMs > 0L &&
-            sentAtElapsedRealtimeMs <= lastAppliedSentAtElapsedRealtimeMs
+            sentAtElapsedRealtimeMs <= lastAppliedSentAtElapsedRealtimeMs &&
+            // Timestamps from another phone's clock (new host, old placeholder) can be far apart: not "stale".
+            lastAppliedSentAtElapsedRealtimeMs - sentAtElapsedRealtimeMs < MaxReorderMs
+
+    /** Messages never arrive more out of order than this; a bigger gap means a different clock. */
+    private const val MaxReorderMs = 10_000L
 
     fun echoSuppressionUntil(nowElapsedRealtimeMs: Long): Long = nowElapsedRealtimeMs + EchoSuppressionMs
 

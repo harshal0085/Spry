@@ -285,6 +285,7 @@ object SpryFriends {
             ref.setValue(mapOf("sid" to sessionId, "key" to sessionKey)).addOnSuccessListener {
                 val waiting = synchronized(pendingAccepts) { pendingAccepts.toList().also { pendingAccepts.clear() } }
                 roomReady = true
+                android.util.Log.i("SpryTunnel", "host: room published on port $port, letting in ${waiting.size}")
                 waiting.forEach { db.getReference("vibe/$me/$it/ok").setValue(true) }
             }
         }
@@ -350,6 +351,7 @@ object SpryFriends {
                         val sid = snap?.child("sid")?.getValue(String::class.java)
                         val key = snap?.child("key")?.getValue(String::class.java)
                         val link = if (sid != null && key != null) joinLink(friend.copy(session = HostedSession(sid, key))) else null
+                        android.util.Log.i("SpryTunnel", "vibe accepted by ${friend.username}: session=${sid != null} link=${link != null}")
                         ref.removeValue()
                         if (link == null) {
                             _vibeStatus.value = "couldn't connect to @${friend.username}"

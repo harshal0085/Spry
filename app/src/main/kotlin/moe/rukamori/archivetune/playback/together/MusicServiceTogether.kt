@@ -399,7 +399,8 @@ internal fun MusicService.joinTogether(
                                             positionMs = 0L,
                                             repeatMode = 0,
                                             shuffleEnabled = false,
-                                            sentAtElapsedRealtimeMs = android.os.SystemClock.elapsedRealtime(),
+                                            // 0 = placeholder; a guest-clock time here made all host updates look stale.
+                                            sentAtElapsedRealtimeMs = 0L,
                                         )
                                     togetherSessionState.value =
                                         moe.rukamori.archivetune.together.TogetherSessionState.Joined(
@@ -656,7 +657,8 @@ internal fun MusicService.joinTogetherOnline(
                                             positionMs = 0L,
                                             repeatMode = 0,
                                             shuffleEnabled = false,
-                                            sentAtElapsedRealtimeMs = android.os.SystemClock.elapsedRealtime(),
+                                            // 0 = placeholder; a guest-clock time here made all host updates look stale.
+                                            sentAtElapsedRealtimeMs = 0L,
                                         )
                                     togetherSessionState.value =
                                         moe.rukamori.archivetune.together.TogetherSessionState.Joined(
@@ -1147,6 +1149,7 @@ internal fun MusicService.startTogetherHeartbeat(
 
 internal suspend fun MusicService.stopTogetherInternal() {
     moe.rukamori.archivetune.friends.SpryFriends.unpublishHosting()
+    moe.rukamori.archivetune.together.TogetherGuestLocalPause.active = false
     togetherBroadcastJob?.cancel()
     togetherBroadcastJob = null
 

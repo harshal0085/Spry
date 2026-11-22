@@ -70,31 +70,63 @@ object SpryTunnel {
             },
         )
 
-    /** Pumps text frames between a local websocket and one tunnel connection until either side ends. */
+    private fun log(msg: String) = android.util.Log.i("SpryTunnel", msg)
+
+    // Fields that change on every host broadcast even when nothing happened.
+    private val volatileFields = Regex("\"(positionMs|sentAtElapsedRealtimeMs)\":\\d+")
+
+    /** Seconds-level heartbeat for unchanged room states; real changes (song, pause, queue) go out at once. */
+    private const val UNCHANGED_RESEND_MS = 2_000L
+
+    /**
+     * Pumps text frames between a local websocket and one tunnel connection until either side ends.
+     * With [throttle], identical-but-for-timestamps messages are sent at most every 2 s (saves Firebase data).
+     */
     private suspend fun bridge(
         ws: WebSocketSession,
         conn: DatabaseReference,
         inbox: String,
         outbox: String,
+        throttle: Boolean = false,
     ) {
         val inRef = conn.child(inbox)
         val frames = Channel<DataSnapshot>(Channel.UNLIMITED)
-        val listener = childEvents(inRef, onAdded = { frames.trySend(it) }, onCancelled = { frames.close() })
+        log("bridge open ${conn.key} in=$inbox")
+        var sent = 0
+        var received = 0
+        var lastKey = ""
+        var lastSentAt = 0L
+        val listener = childEvents(inRef, onAdded = { frames.trySend(it) }, onCancelled = { log("bridge ${conn.key} listener cancelled"); frames.close() })
         try {
             coroutineScope {
                 launch {
                     for (s in frames) {
-                        s.getValue(String::class.java)?.let { ws.send(it) }
+                        s.getValue(String::class.java)?.let { ws.send(it); if (++received <= 3) log("bridge ${conn.key} <- ${it.take(80)}") }
                         s.ref.removeValue()
                     }
                     ws.close() // the other side went away
                 }
                 for (f in ws.incoming) {
-                    if (f is Frame.Text) conn.child(outbox).push().setValue(f.readText())
+                    if (f is Frame.Text) {
+                        val text = f.readText()
+                        if (throttle) {
+                            val key = text.replace(volatileFields, "")
+                            val now = android.os.SystemClock.elapsedRealtime()
+                            if (key == lastKey && now - lastSentAt < UNCHANGED_RESEND_MS) continue
+                            lastKey = key
+                            lastSentAt = now
+                        }
+                        if (++sent <= 3) log("bridge ${conn.key} -> ${text.take(80)}")
+                        conn.child(outbox).push().setValue(text).addOnFailureListener { log("push failed: ${it.message}") }
+                    }
                 }
                 coroutineContext.cancelChildren()
             }
+        } catch (t: Throwable) {
+            log("bridge ${conn.key} error: $t")
+            throw t
         } finally {
+            log("bridge ${conn.key} closed (sent=$sent received=$received)")
             inRef.removeEventListener(listener)
             conn.removeValue()
         }
@@ -129,11 +161,12 @@ object SpryTunnel {
                         } else if (id !in conns) {
                             conns[id] =
                                 launch {
+                                    log("host: new guest connection $id -> local port $localPort")
                                     runCatching {
                                         client.webSocket("ws://127.0.0.1:$localPort/together") {
-                                            bridge(this, root.child(id), inbox = "up", outbox = "down")
+                                            bridge(this, root.child(id), inbox = "up", outbox = "down", throttle = true)
                                         }
-                                    }
+                                    }.onFailure { log("host: local connect failed: $it") }
                                     root.child(id).removeValue()
                                 }
                         }
@@ -164,12 +197,17 @@ object SpryTunnel {
                 routing {
                     webSocket("/together") {
                         val conn = db.getReference("tunnel/$hostUid").push()
-                        runCatching { conn.child("guest").setValue(myUid).await() }.onFailure { return@webSocket }
+                        log("guest: local client connected, opening ${conn.key} to host $hostUid")
+                        runCatching { conn.child("guest").setValue(myUid).await() }.onFailure {
+                            log("guest: tunnel write denied: $it")
+                            return@webSocket
+                        }
                         conn.onDisconnect().removeValue()
                         bridge(this, conn, inbox = "down", outbox = "up")
                     }
                 }
             }.also { it.start(wait = false) }
+        log("guest: local bridge on port $port")
         return port
     }
 
