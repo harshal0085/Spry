@@ -174,6 +174,19 @@ fun FriendsCard(modifier: Modifier = Modifier) {
                 }
             }
 
+            val debugLines by SpryTunnel.debugLines.collectAsState()
+            var showLog by remember { mutableStateOf(false) }
+            if (debugLines.isNotEmpty()) {
+                TextButton(onClick = { showLog = !showLog }) { Text(if (showLog) "hide link log" else "show link log") }
+                if (showLog) {
+                    Text(
+                        text = debugLines.takeLast(18).joinToString("\n"),
+                        style = MaterialTheme.typography.bodySmall,
+                        fontFamily = FontFamily.Monospace,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
             val vibeStatus by SpryFriends.vibeStatus.collectAsState()
             vibeStatus?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             message?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary) }

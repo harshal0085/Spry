@@ -177,6 +177,8 @@ internal class ServiceTogetherCoordinator(
         // The join placeholder carries nothing to play; applying it would only pause us.
         if (state.sentAtElapsedRealtimeMs == 0L && state.queue.isEmpty()) return
         val now = SystemClock.elapsedRealtime()
+        val dbg = moe.rukamori.archivetune.friends.SpryTunnel::log
+        dbg("state ${if (state.isPlaying) "playing" else "paused"} song ${state.currentIndex + 1}/${state.queue.size}${if (force) " (forced)" else ""}")
 
         val pending = delegate.getPendingGuestControl()
         if (force) {
@@ -196,7 +198,10 @@ internal class ServiceTogetherCoordinator(
                 }
                 delegate.clearPendingGuestControl()
             } else {
-                if (mismatch) return
+                if (mismatch) {
+                    dbg("  skipped: waiting for my own request")
+                    return
+                }
                 delegate.clearPendingGuestControl()
             }
         }
@@ -208,11 +213,13 @@ internal class ServiceTogetherCoordinator(
                 force = force,
             )
         ) {
+            dbg("  skipped: stale (sent=$sentAt last=${configCollector.togetherLastAppliedRoomStateSentAtElapsedMs})")
             return
         }
 
         // Spry: a guest may pause just their own phone. Keep tracking the host silently; play resyncs.
         if (TogetherGuestLocalPause.active && !force) {
+            dbg("  kept paused: you paused this phone")
             configCollector.togetherLastAppliedRoomStateSentAtElapsedMs = sentAt
             configCollector.togetherLastRemoteAppliedPlayWhenReady = false
             configCollector.togetherSessionState.value =
@@ -231,10 +238,7 @@ internal class ServiceTogetherCoordinator(
 
         withContext(Dispatchers.Main) {
             val player = playerProvider()
-            android.util.Log.i(
-                "SpryTogether",
-                "room state playing=${wantPlaying} idx=${state.currentIndex} pos=${state.positionMs} target=$targetPos local=${player.currentPosition} localPlaying=${player.playWhenReady} online=${configCollector.togetherIsOnlineSession}",
-            )
+            dbg("  applied: target ${targetPos / 1000}s, mine ${player.currentPosition / 1000}s, play=$wantPlaying")
             configCollector.togetherApplyingRemote = true
             configCollector.togetherSuppressEchoUntilElapsedMs =
                 TogetherPlaybackSync.echoSuppressionUntil(

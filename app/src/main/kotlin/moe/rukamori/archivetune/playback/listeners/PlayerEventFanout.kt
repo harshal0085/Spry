@@ -131,6 +131,7 @@ internal class PlayerEventFanout(
                     )
                 if (!isEcho) {
                     moe.rukamori.archivetune.together.TogetherGuestLocalPause.active = !playWhenReady
+                    moe.rukamori.archivetune.friends.SpryTunnel.log(if (playWhenReady) "you pressed play: rejoining" else "you paused this phone")
                     if (playWhenReady) {
                         scope.launch(SilentHandler) { queueDelegate.applyRemoteRoomState(joined.roomState, force = true) }
                     }

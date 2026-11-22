@@ -37,6 +37,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import moe.rukamori.archivetune.playback.MusicService
 import moe.rukamori.archivetune.playback.together.joinTogether
 import moe.rukamori.archivetune.playback.together.startTogetherHost
+import moe.rukamori.archivetune.playback.together.updateTogetherSettings
 import moe.rukamori.archivetune.together.TogetherRoomSettings
 import java.net.ServerSocket
 
@@ -59,6 +60,14 @@ object SpryFriends {
     )
 
     val USERNAME_REGEX = Regex("^[a-z0-9_]{3,20}$")
+
+    /** No approval step (accepting the request is it); guests listen and may pause their own phone only. */
+    private val VibeRoomSettings =
+        TogetherRoomSettings(
+            allowGuestsToAddTracks = false,
+            allowGuestsToControlPlayback = false,
+            requireHostApprovalToJoin = false,
+        )
 
     private var available = false
     private val auth get() = FirebaseAuth.getInstance()
@@ -285,7 +294,7 @@ object SpryFriends {
             ref.setValue(mapOf("sid" to sessionId, "key" to sessionKey)).addOnSuccessListener {
                 val waiting = synchronized(pendingAccepts) { pendingAccepts.toList().also { pendingAccepts.clear() } }
                 roomReady = true
-                android.util.Log.i("SpryTunnel", "host: room published on port $port, letting in ${waiting.size}")
+                SpryTunnel.log("host: room published on port $port, letting in ${waiting.size}")
                 waiting.forEach { db.getReference("vibe/$me/$it/ok").setValue(true) }
             }
         }
@@ -351,7 +360,7 @@ object SpryFriends {
                         val sid = snap?.child("sid")?.getValue(String::class.java)
                         val key = snap?.child("key")?.getValue(String::class.java)
                         val link = if (sid != null && key != null) joinLink(friend.copy(session = HostedSession(sid, key))) else null
-                        android.util.Log.i("SpryTunnel", "vibe accepted by ${friend.username}: session=${sid != null} link=${link != null}")
+                        SpryTunnel.log("vibe accepted by ${friend.username}: session=${sid != null} link=${link != null}")
                         ref.removeValue()
                         if (link == null) {
                             _vibeStatus.value = "couldn't connect to @${friend.username}"
@@ -370,7 +379,10 @@ object SpryFriends {
         service: MusicService,
     ) {
         val me = _user.value?.uid ?: return
+        SpryTunnel.log("host: letting in @${from.username} (room ready=$roomReady)")
         if (roomReady) {
+            // Accepting already is the approval; friends listen along but can't change the music.
+            service.updateTogetherSettings(VibeRoomSettings)
             db.getReference("vibe/$me/${from.uid}/ok").setValue(true)
             return
         }
@@ -379,7 +391,7 @@ object SpryFriends {
         _incomingVibes.value = _incomingVibes.value.filter { it.uid != from.uid }
         if (!hosting) {
             val port = ServerSocket(0).use { it.localPort }
-            service.startTogetherHost(port, _username.value.orEmpty(), TogetherRoomSettings())
+            service.startTogetherHost(port, _username.value.orEmpty(), VibeRoomSettings)
         }
     }
 

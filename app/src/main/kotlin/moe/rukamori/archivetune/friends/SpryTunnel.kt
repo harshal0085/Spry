@@ -70,7 +70,18 @@ object SpryTunnel {
             },
         )
 
-    private fun log(msg: String) = android.util.Log.i("SpryTunnel", msg)
+    /** Last lines of the link log, shown on screen in the friends card so both phones can be checked. */
+    val debugLines = kotlinx.coroutines.flow.MutableStateFlow<List<String>>(emptyList())
+    private val clock = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US)
+    private val typeField = Regex("\"type\":\"([a-z_]+)\"")
+
+    fun log(msg: String) {
+        android.util.Log.i("SpryTunnel", msg)
+        val line = "${clock.format(java.util.Date())} $msg"
+        debugLines.value = (debugLines.value + line).takeLast(40)
+    }
+
+    private fun typeOf(text: String) = typeField.find(text)?.groupValues?.get(1) ?: "?"
 
     // Fields that change on every host broadcast even when nothing happened.
     private val volatileFields = Regex("\"(positionMs|sentAtElapsedRealtimeMs)\":\\d+")
@@ -101,7 +112,10 @@ object SpryTunnel {
             coroutineScope {
                 launch {
                     for (s in frames) {
-                        s.getValue(String::class.java)?.let { ws.send(it); if (++received <= 3) log("bridge ${conn.key} <- ${it.take(80)}") }
+                        s.getValue(String::class.java)?.let {
+                            ws.send(it)
+                            log("<- ${typeOf(it)} #${++received}")
+                        }
                         s.ref.removeValue()
                     }
                     ws.close() // the other side went away
@@ -116,7 +130,7 @@ object SpryTunnel {
                             lastKey = key
                             lastSentAt = now
                         }
-                        if (++sent <= 3) log("bridge ${conn.key} -> ${text.take(80)}")
+                        log("-> ${typeOf(text)} #${++sent}")
                         conn.child(outbox).push().setValue(text).addOnFailureListener { log("push failed: ${it.message}") }
                     }
                 }

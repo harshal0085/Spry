@@ -373,6 +373,7 @@ internal fun MusicService.joinTogether(
                     when (event) {
                         is moe.rukamori.archivetune.together.TogetherClientEvent.Welcome -> {
                             togetherSelfParticipantId = event.welcome.participantId
+                            moe.rukamori.archivetune.friends.SpryTunnel.log("welcome: ${if (event.welcome.isPending) "WAITING FOR HOST APPROVAL" else "in the room"}")
                             scope.launch(SilentHandler) {
                                 val state = togetherSessionState.value
                                 if (state is moe.rukamori.archivetune.together.TogetherSessionState.Joining) {
@@ -500,6 +501,7 @@ internal fun MusicService.joinTogether(
                         }
 
                         is moe.rukamori.archivetune.together.TogetherClientEvent.Error -> {
+                            moe.rukamori.archivetune.friends.SpryTunnel.log("ERROR: ${event.message} ${event.throwable ?: ""}")
                             scope.launch(SilentHandler) {
                                 togetherSessionState.value =
                                     moe.rukamori.archivetune.together.TogetherSessionState.Error(
@@ -511,6 +513,7 @@ internal fun MusicService.joinTogether(
                         }
 
                         moe.rukamori.archivetune.together.TogetherClientEvent.Disconnected -> {
+                            moe.rukamori.archivetune.friends.SpryTunnel.log("DISCONNECTED from host")
                             val current = togetherSessionState.value
                             if (current is moe.rukamori.archivetune.together.TogetherSessionState.Idle) return@collect
                             scope.launch(SilentHandler) {
@@ -758,6 +761,7 @@ internal fun MusicService.joinTogetherOnline(
                         }
 
                         is moe.rukamori.archivetune.together.TogetherClientEvent.Error -> {
+                            moe.rukamori.archivetune.friends.SpryTunnel.log("ERROR: ${event.message} ${event.throwable ?: ""}")
                             scope.launch(SilentHandler) {
                                 togetherSessionState.value =
                                     moe.rukamori.archivetune.together.TogetherSessionState.Error(
@@ -769,6 +773,7 @@ internal fun MusicService.joinTogetherOnline(
                         }
 
                         moe.rukamori.archivetune.together.TogetherClientEvent.Disconnected -> {
+                            moe.rukamori.archivetune.friends.SpryTunnel.log("DISCONNECTED from host")
                             val current = togetherSessionState.value
                             if (current is moe.rukamori.archivetune.together.TogetherSessionState.Idle) return@collect
                             scope.launch(SilentHandler) {
