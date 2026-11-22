@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import moe.rukamori.archivetune.ui.theme.SpryRed
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -251,20 +250,49 @@ fun PlayerCoverCard(
             )
         }
 
-        // Spry "Clean signal": one thin red glitch line + a faint grey one over the art.
-        Spacer(
-            Modifier.matchParentSize().drawBehind {
-                drawRect(
-                    color = SpryRed,
-                    topLeft = Offset(0f, size.height * 0.34f),
-                    size = Size(size.width, 3.dp.toPx()),
-                )
-                drawRect(
-                    color = Color.White.copy(alpha = 0.35f),
-                    topLeft = Offset(size.width * 0.3f, size.height * 0.64f),
-                    size = Size(size.width * 0.4f, 1.dp.toPx()),
-                )
-            },
-        )
+        SpryStaticStreak(mediaId, Modifier.matchParentSize())
     }
+}
+
+/**
+ * Spry "Static": when the song changes, a pixel-sort smear with an RGB split sweeps across the art
+ * and fades (about half a second). Nothing is drawn at rest.
+ */
+@Composable
+private fun SpryStaticStreak(
+    mediaId: String?,
+    modifier: Modifier,
+) {
+    val reduceMotion = moe.rukamori.archivetune.LocalAnimationsDisabled.current
+    val progress = remember { androidx.compose.animation.core.Animatable(1f) }
+    var seed by remember { androidx.compose.runtime.mutableIntStateOf(0) }
+    var first by remember { androidx.compose.runtime.mutableStateOf(true) }
+    androidx.compose.runtime.LaunchedEffect(mediaId) {
+        if (first || reduceMotion) {
+            first = false
+            return@LaunchedEffect
+        }
+        seed = mediaId.hashCode()
+        progress.snapTo(0f)
+        progress.animateTo(1f, androidx.compose.animation.core.tween(520, easing = androidx.compose.animation.core.LinearOutSlowInEasing))
+    }
+    Spacer(
+        modifier.drawBehind {
+            val p = progress.value
+            if (p >= 1f) return@drawBehind
+            val fade = 1f - p
+            val rnd = java.util.Random(seed.toLong())
+            val bars = 14
+            repeat(bars) {
+                val y = rnd.nextFloat() * size.height
+                val h = (1f + rnd.nextFloat() * 5f).dp.toPx()
+                val len = size.width * (0.25f + rnd.nextFloat() * 0.75f) * (0.4f + p)
+                val x = (rnd.nextFloat() - 0.3f) * size.width * (1f - p)
+                val split = 3.dp.toPx() * fade
+                drawRect(Color(0xFFFF2A1F).copy(alpha = 0.55f * fade), Offset(x - split, y), Size(len, h))
+                drawRect(Color(0xFF2AD4FF).copy(alpha = 0.45f * fade), Offset(x + split, y + h * 0.3f), Size(len, h))
+                drawRect(Color.White.copy(alpha = 0.7f * fade), Offset(x, y), Size(len * 0.8f, h * 0.6f))
+            }
+        },
+    )
 }

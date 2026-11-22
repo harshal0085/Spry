@@ -23,6 +23,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,6 +52,7 @@ internal fun TopBarAccountMenuContent(
     onNavigateNewRelease: () -> Unit,
     onNavigateSettings: () -> Unit,
     modifier: Modifier = Modifier,
+    onNavigateFriends: () -> Unit = {},
     accentColor: Color? = null,
     hasUnreadNews: Boolean = false,
     hasUpdate: Boolean = false,
@@ -137,6 +140,19 @@ internal fun TopBarAccountMenuContent(
                 )
             }
         }
+    }
+
+    // Spry: friends live here, first, with a dot when someone is waiting on you.
+    if (moe.rukamori.archivetune.friends.SpryFriends.isAvailable) {
+        val friends by moe.rukamori.archivetune.friends.SpryFriends.friends.collectAsState()
+        val requests by moe.rukamori.archivetune.friends.SpryFriends.requests.collectAsState()
+        val online = friends.count { it.online }
+        TopBarDropdownMenuItem(
+            icon = painterResource(R.drawable.person),
+            title = if (online > 0) "Friends · $online online" else "Friends",
+            onClick = onNavigateFriends,
+            badge = requests.isNotEmpty(),
+        )
     }
 
     TopBarDropdownMenuItem(

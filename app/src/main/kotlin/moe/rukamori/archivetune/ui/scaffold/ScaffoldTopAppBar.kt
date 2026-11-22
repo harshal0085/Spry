@@ -211,14 +211,8 @@ fun ScaffoldTopAppBar(
             },
             actions = {
                 val hasUpdate = splashDone && (updateState is UpdateState.SoftUpdate || updateState is UpdateState.CriticalUpdate)
-                // Spry: friends + vibe together, one tap from Home
-                androidx.compose.material3.IconButton(onClick = { navController.navigate("settings/music_together") }) {
-                    androidx.compose.material3.Icon(
-                        painter = androidx.compose.ui.res.painterResource(moe.rukamori.archivetune.R.drawable.person),
-                        contentDescription = "Friends",
-                    )
-                }
                 HomeTopBarAccountMenu(
+                    onNavigateFriends = { navController.navigate("friends") },
                     avatarUrl = avatarUrl,
                     accountName = accountName,
                     accentColor = accentColor,
@@ -261,26 +255,8 @@ private fun getGreetingText(): String {
 /** "spry_" wordmark: white name with a blinking red terminal cursor. */
 @Composable
 private fun SpryWordmark() {
-    val animationsDisabled = LocalAnimationsDisabled.current
-    val cursorAlpha =
-        if (animationsDisabled) {
-            1f
-        } else {
-            val blink by rememberInfiniteTransition(label = "SpryCursor").animateFloat(
-                initialValue = 1f,
-                targetValue = 0f,
-                // Hard on/off blink like a terminal cursor, not a fade.
-                animationSpec = infiniteRepeatable(tween(1060, easing = Easing { if (it < 0.5f) 0f else 1f })),
-                label = "SpryCursorAlpha",
-            )
-            blink
-        }
     Text(
-        text =
-            buildAnnotatedString {
-                append("spry")
-                withStyle(SpanStyle(color = SpryRed.copy(alpha = cursorAlpha))) { append("_") }
-            },
+        text = "spry",
         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
         maxLines = 1,
     )

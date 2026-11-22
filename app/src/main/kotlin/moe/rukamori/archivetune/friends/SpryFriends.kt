@@ -149,6 +149,7 @@ object SpryFriends {
         _requests.value = emptyList()
         _friends.value = emptyList()
         _incomingVibes.value = emptyList()
+        _incomingInvites.value = emptyList()
         if (u == null) return
         val me = u.uid
 
@@ -160,6 +161,10 @@ object SpryFriends {
                 presence.onDisconnect().setValue(mapOf("online" to false, "at" to ServerValue.TIMESTAMP))
                 presence.setValue(mapOf("online" to true, "at" to ServerValue.TIMESTAMP))
             }
+        }
+
+        listen(db.getReference("invites/$me")) { snap ->
+            _incomingInvites.value = snap.children.mapNotNull { c -> c.getValue(String::class.java)?.let { Person(c.key!!, it) } }
         }
 
         listen(db.getReference("vibe/$me")) { snap ->
@@ -398,6 +403,39 @@ object SpryFriends {
     fun declineVibe(from: Person) {
         val me = _user.value?.uid ?: return
         db.getReference("vibe/$me/${from.uid}").removeValue()
+    }
+
+    // ---- Invites: the other direction. I ask a friend to listen to MY music. ----
+
+    private val _incomingInvites = MutableStateFlow<List<Person>>(emptyList())
+    val incomingInvites = _incomingInvites.asStateFlow()
+
+    /** Friends I invited; their resulting vibe request is let in without asking me again. */
+    private val invited = java.util.Collections.synchronizedSet(mutableSetOf<String>())
+
+    fun wasInvited(uid: String) = uid in invited
+
+    fun invite(friend: Friend): String? {
+        val me = _user.value?.uid ?: return "Not signed in"
+        val myName = _username.value?.takeIf { it.isNotEmpty() } ?: return "Pick a username first"
+        invited += friend.uid
+        db.getReference("invites/${friend.uid}/$me").setValue(myName)
+        return "invited @${friend.username} to your music"
+    }
+
+    /** Guest side: accepting an invite is just a vibe request the host already agreed to. */
+    fun acceptInvite(
+        from: Person,
+        service: MusicService,
+    ) {
+        val me = _user.value?.uid ?: return
+        db.getReference("invites/$me/${from.uid}").removeValue()
+        requestVibe(Friend(from.uid, from.username, online = true, session = null), service)
+    }
+
+    fun declineInvite(from: Person) {
+        val me = _user.value?.uid ?: return
+        db.getReference("invites/$me/${from.uid}").removeValue()
     }
 
     /** Opens a local bridge to the friend's room and returns a join link the existing Music Together code understands. */

@@ -46,6 +46,14 @@
         ".write": "auth != null && auth.uid === $uid"
       }
     },
+    "invites": {
+      "$to": {
+        ".read": "auth != null && auth.uid === $to",
+        "$from": {
+          ".write": "auth != null && ((auth.uid === $from && root.child('friends').child($to).child($from).exists() && (!newData.exists() || newData.isString())) || (auth.uid === $to && !newData.exists()))"
+        }
+      }
+    },
     "vibe": {
       "$host": {
         ".read": "auth != null && auth.uid === $host",

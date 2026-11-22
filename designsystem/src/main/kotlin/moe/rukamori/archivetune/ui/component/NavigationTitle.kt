@@ -66,13 +66,12 @@ fun NavigationTitle(
                 )
             }
 
-            // Spry: section headers read like terminal comments ("// recently played").
+            // Spry: plain, quiet section headers (no code-style prefix).
             Text(
-                text = "// " + title.lowercase(),
+                text = title,
                 style = MaterialTheme.typography.titleMedium,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
                 overflow = TextOverflow.Ellipsis,
                 maxLines = 1,
             )

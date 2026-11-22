@@ -162,8 +162,12 @@ fun ArchiveTuneTheme(
     }
 }
 
-/** Spry "Clean signal" palette: true black (AMOLED) with vivid red. */
-val SpryRed = Color(0xFFFF1F1F)
+/**
+ * Spry "Signal" palette: charcoal ground and white type, like ink-on-charcoal ASCII posters.
+ * Red is reserved for live things (online, playing, together) and the player's red field.
+ */
+val SpryRed = Color(0xFFFF2A1F)
+val SpryCharcoal = Color(0xFF141414)
 
 val SpryColorScheme =
     darkColorScheme(
@@ -180,25 +184,25 @@ val SpryColorScheme =
         onTertiary = Color.Black,
         tertiaryContainer = Color(0xFF1F1F1F),
         onTertiaryContainer = Color.White,
-        background = Color.Black,
-        onBackground = Color(0xFFF2F2F2),
-        surface = Color.Black,
-        onSurface = Color(0xFFF2F2F2),
-        surfaceVariant = Color(0xFF141414),
+        background = SpryCharcoal,
+        onBackground = Color(0xFFEDEDED),
+        surface = SpryCharcoal,
+        onSurface = Color(0xFFEDEDED),
+        surfaceVariant = Color(0xFF1E1E1E),
         onSurfaceVariant = Color(0xFF8A8A8A),
         surfaceTint = SpryRed,
         inverseSurface = Color(0xFFF2F2F2),
-        inverseOnSurface = Color.Black,
-        outline = Color(0xFF3A3A3A),
-        outlineVariant = Color(0xFF1F1F1F),
+        inverseOnSurface = SpryCharcoal,
+        outline = Color(0xFF3C3C3C),
+        outlineVariant = Color(0xFF262626),
         scrim = Color.Black,
-        surfaceBright = Color(0xFF222222),
-        surfaceDim = Color.Black,
-        surfaceContainerLowest = Color.Black,
-        surfaceContainerLow = Color(0xFF0A0A0A),
-        surfaceContainer = Color(0xFF111111),
-        surfaceContainerHigh = Color(0xFF161616),
-        surfaceContainerHighest = Color(0xFF1C1C1C),
+        surfaceBright = Color(0xFF2A2A2A),
+        surfaceDim = Color(0xFF0E0E0E),
+        surfaceContainerLowest = Color(0xFF0E0E0E),
+        surfaceContainerLow = Color(0xFF181818),
+        surfaceContainer = Color(0xFF1B1B1B),
+        surfaceContainerHigh = Color(0xFF212121),
+        surfaceContainerHighest = Color(0xFF282828),
     )
 
 @Composable

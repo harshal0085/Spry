@@ -115,10 +115,9 @@ internal fun HeroMediaCard(
                         }
                     )
             ) {
-                AsyncImage(
-                    model = imageRequest,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
+                // Spry "Signal": the hero artwork is drawn as fine ASCII on charcoal.
+                moe.rukamori.archivetune.ui.component.SpryAsciiArt(
+                    url = item.thumbnailUrl,
                     modifier = Modifier.fillMaxSize(),
                 )
             }

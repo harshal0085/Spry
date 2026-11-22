@@ -60,13 +60,12 @@ fun HomeSectionHeader(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            // Spry: section headers read like terminal comments ("// hindi hits").
+            // Spry: plain, quiet section headers (no code-style prefix).
             Text(
-                text = "// " + title.lowercase(),
+                text = title,
                 style = MaterialTheme.typography.titleMedium,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )

@@ -154,7 +154,7 @@ fun YumaApp(
     val isSystemInDarkTheme = isSystemInDarkTheme()
     // Spry is always dark + true black (see SpryColorScheme).
     val useDarkTheme = true
-    val pureBlack = true
+    val pureBlack = false // Spry Signal: charcoal ground, not AMOLED black
 
     val dynamicThemeColorState =
         rememberDynamicThemeColor(

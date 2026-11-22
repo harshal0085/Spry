@@ -105,6 +105,9 @@ internal fun NavGraphBuilder.settingsNavigationRoutes(
     composable("settings/music_together") {
         MusicTogetherScreen(navController)
     }
+    composable("friends") {
+        moe.rukamori.archivetune.friends.FriendsScreen(navController)
+    }
     composable("settings/lastfm") {
         LastFMSettings(navController)
     }

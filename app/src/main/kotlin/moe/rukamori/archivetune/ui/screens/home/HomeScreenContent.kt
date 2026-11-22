@@ -147,7 +147,7 @@ internal fun HomeContent(
                     if (!isFilterActive) {
                         item(key = "home_friends_online", contentType = "friends_online") {
                             moe.rukamori.archivetune.friends.OnlineFriendsStrip(
-                                onOpenFriends = { navController.navigate("settings/music_together") },
+                                onOpenFriends = { navController.navigate("friends") },
                                 modifier = Modifier.animateItem(),
                             )
                         }
@@ -215,30 +215,7 @@ internal fun HomeContent(
                             }
                         }
 
-                        if (uiState.accountPlaylists.isNotEmpty()) {
-                            sectionSpacer("account_playlists")
-                            item(
-                                key = "home_account_playlists",
-                                contentType = "media_shelf",
-                            ) {
-                                Column(modifier = Modifier.animateItem()) {
-                                    AccountPlaylistsTitle(
-                                        accountName = uiState.accountName,
-                                        accountImageUrl = uiState.accountImageUrl,
-                                        onClick = { navController.navigate("account") },
-                                    )
-                                    AccountPlaylistsSection(
-                                        accountPlaylists = uiState.accountPlaylists,
-                                        mediaMetadata = mediaMetadata,
-                                        isPlaying = isPlaying,
-                                        navController = navController,
-                                        playerConnection = playerConnection,
-                                        menuState = menuState,
-                                        scope = scope,
-                                    )
-                                }
-                            }
-                        }
+                        // Spry: no "Your YouTube playlists" shelf on Home (still in Library/Account).
 
                         homeForgottenFavoritesSection(
                             uiState = uiState,

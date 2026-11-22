@@ -8,6 +8,7 @@ package moe.rukamori.archivetune.ui.scaffold
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,13 +38,15 @@ fun HomeTopBarAccountMenu(
     blurRadius: Float = SettingsDimensions.BlurRadiusDefault,
     blurNavBar: Boolean = true,
     pureBlack: Boolean = false,
+    onNavigateFriends: () -> Unit = {},
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val friendRequests by moe.rukamori.archivetune.friends.SpryFriends.requests.collectAsState()
 
     Box(modifier = modifier) {
         TopBarAccountAnchor(
             avatarUrl = avatarUrl,
-            hasBadge = hasUnreadNews || hasUpdate,
+            hasBadge = hasUnreadNews || hasUpdate || friendRequests.isNotEmpty(),
             onClick = { expanded = !expanded },
         )
 
@@ -80,6 +83,10 @@ fun HomeTopBarAccountMenu(
                 onNavigateSettings = {
                     expanded = false
                     onNavigateSettings()
+                },
+                onNavigateFriends = {
+                    expanded = false
+                    onNavigateFriends()
                 },
             )
         }
