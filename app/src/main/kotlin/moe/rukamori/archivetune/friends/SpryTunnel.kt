@@ -36,6 +36,12 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import java.net.ServerSocket
 
 object SpryTunnel {
@@ -81,53 +87,106 @@ object SpryTunnel {
     // Fields that change on every host broadcast even when nothing happened.
     private val volatileFields = Regex("\"(positionMs|sentAtElapsedRealtimeMs)\":\\d+")
 
-    /** Seconds-level heartbeat for unchanged room states; real changes (song, pause, queue) go out at once. */
+    /** Unchanged room states (only the position moved) go out at most this often; real changes go at once. */
     private const val UNCHANGED_RESEND_MS = 2_000L
+
+    /** The full queue rides along at least this often even when unchanged, so a guest can always rebuild it. */
+    private const val FULL_QUEUE_EVERY_MS = 30_000L
+
+    private fun jsonOf(text: String) = runCatching { Json.parseToJsonElement(text).jsonObject }.getOrNull()
 
     /**
      * Pumps text frames between a local websocket and one tunnel connection until either side ends.
-     * With [throttle], identical-but-for-timestamps messages are sent at most every 2 s (saves Firebase data).
+     * [host] side: drops timestamp-only repeats, leaves the (large) queue out of room states whose queue
+     * hash is unchanged, and keeps at most one room state in flight so updates never pile up behind
+     * each other. Guest side: puts the last queue back into slim room states and, when several arrive
+     * at once, applies only the newest.
      */
     private suspend fun bridge(
         ws: WebSocketSession,
         conn: DatabaseReference,
         inbox: String,
         outbox: String,
-        throttle: Boolean = false,
+        host: Boolean = false,
     ) {
         val inRef = conn.child(inbox)
         val frames = Channel<DataSnapshot>(Channel.UNLIMITED)
         log("bridge open ${conn.key} in=$inbox")
         var sent = 0
         var received = 0
+        // host side
         var lastKey = ""
         var lastSentAt = 0L
+        var lastQueueHash = ""
+        var lastFullAt = 0L
+        val lock = Any()
+        var stateInFlight = false
+        var pendingState: String? = null
+        // guest side
+        var lastQueue: JsonElement? = null
+
+        fun pushState(text: String) {
+            conn.child(outbox).push().setValue(text).addOnCompleteListener {
+                val next = synchronized(lock) { pendingState.also { pendingState = null; if (it == null) stateInFlight = false } }
+                if (next != null) pushState(next)
+            }
+        }
+
         val listener = childEvents(inRef, onAdded = { frames.trySend(it) }, onCancelled = { log("bridge ${conn.key} listener cancelled"); frames.close() })
         try {
             coroutineScope {
                 launch {
-                    for (s in frames) {
-                        s.getValue(String::class.java)?.let {
-                            ws.send(it)
-                            log("<- ${typeOf(it)} #${++received}")
+                    for (first in frames) {
+                        val batch = mutableListOf(first)
+                        while (true) batch += frames.tryReceive().getOrNull() ?: break
+                        val texts = batch.map { it.getValue(String::class.java) }
+                        val newestState = texts.indexOfLast { it != null && typeOf(it) == "room_state" }
+                        texts.forEachIndexed { i, raw ->
+                            var text = raw ?: return@forEachIndexed
+                            if (typeOf(text) == "room_state") {
+                                val obj = jsonOf(text)
+                                val state = obj?.get("state")?.jsonObject
+                                if (obj != null && state != null) {
+                                    if (state.containsKey("queue")) {
+                                        lastQueue = state["queue"]
+                                    } else if (lastQueue != null) {
+                                        text = JsonObject(obj + ("state" to JsonObject(state + ("queue" to lastQueue!!)))).toString()
+                                    }
+                                }
+                                if (i != newestState) return@forEachIndexed // a newer state is right behind it
+                            }
+                            ws.send(text)
+                            log("<- ${typeOf(text)} #${++received}${if (batch.size > 1) " (batch ${batch.size})" else ""}")
                         }
-                        s.ref.removeValue()
+                        batch.forEach { it.ref.removeValue() }
                     }
                     ws.close() // the other side went away
                 }
                 for (f in ws.incoming) {
-                    if (f is Frame.Text) {
-                        val text = f.readText()
-                        if (throttle) {
-                            val key = text.replace(volatileFields, "")
-                            val now = android.os.SystemClock.elapsedRealtime()
-                            if (key == lastKey && now - lastSentAt < UNCHANGED_RESEND_MS) continue
-                            lastKey = key
-                            lastSentAt = now
-                        }
+                    if (f !is Frame.Text) continue
+                    var text = f.readText()
+                    if (!host || typeOf(text) != "room_state") {
                         log("-> ${typeOf(text)} #${++sent}")
                         conn.child(outbox).push().setValue(text).addOnFailureListener { log("push failed: ${it.message}") }
+                        continue
                     }
+                    val now = android.os.SystemClock.elapsedRealtime()
+                    val key = text.replace(volatileFields, "")
+                    if (key == lastKey && now - lastSentAt < UNCHANGED_RESEND_MS) continue
+                    lastKey = key
+                    lastSentAt = now
+                    val obj = jsonOf(text)
+                    val state = obj?.get("state")?.jsonObject
+                    val hash = state?.get("queueHash")?.jsonPrimitive?.contentOrNull.orEmpty()
+                    if (obj != null && state != null && hash.isNotEmpty() && hash == lastQueueHash && now - lastFullAt < FULL_QUEUE_EVERY_MS) {
+                        text = JsonObject(obj + ("state" to JsonObject(state - "queue"))).toString()
+                    } else {
+                        lastQueueHash = hash
+                        lastFullAt = now
+                    }
+                    log("-> room_state #${++sent} (${text.length / 1024} KB)")
+                    val sendNow = synchronized(lock) { if (stateInFlight) { pendingState = text; false } else { stateInFlight = true; true } }
+                    if (sendNow) pushState(text)
                 }
                 coroutineContext.cancelChildren()
             }
@@ -140,7 +199,6 @@ object SpryTunnel {
             conn.removeValue()
         }
     }
-
     /**
      * One end of an in-memory websocket. Two of these with swapped channels connect the tunnel straight
      * to the room server, with no loopback socket (some phones block an app connecting to itself).
@@ -204,7 +262,7 @@ object SpryTunnel {
                                         }
                                     }
                                     try {
-                                        bridge(PipeSession(coroutineContext, incoming = fromServer, outgoing = toServer), root.child(id), inbox = "up", outbox = "down", throttle = true)
+                                        bridge(PipeSession(coroutineContext, incoming = fromServer, outgoing = toServer), root.child(id), inbox = "up", outbox = "down", host = true)
                                     } finally {
                                         toServer.close() // guest gone: the room server sees the connection end and cleans up
                                         root.child(id).removeValue()
