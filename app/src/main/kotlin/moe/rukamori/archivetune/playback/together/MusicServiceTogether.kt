@@ -110,7 +110,7 @@ internal fun MusicService.startTogetherHost(
 
         server.start(port)
         togetherServer = server
-        moe.rukamori.archivetune.friends.SpryFriends.publishHosting(sessionId, sessionKey, port)
+        moe.rukamori.archivetune.friends.SpryFriends.publishHosting(sessionId, sessionKey, server)
 
         scope.launch(SilentHandler) {
             togetherSessionState.value =

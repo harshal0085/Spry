@@ -30,10 +30,11 @@ internal object TogetherPlaybackSync {
         lastAppliedSentAtElapsedRealtimeMs: Long,
         force: Boolean,
     ): Boolean =
-        !force &&
-            sentAtElapsedRealtimeMs > 0L &&
+        sentAtElapsedRealtimeMs > 0L &&
             lastAppliedSentAtElapsedRealtimeMs > 0L &&
-            sentAtElapsedRealtimeMs <= lastAppliedSentAtElapsedRealtimeMs &&
+            // A forced re-apply may repeat the newest state, but never roll back to an older one
+            // (that ping-ponged guests between the old and new song).
+            (if (force) sentAtElapsedRealtimeMs < lastAppliedSentAtElapsedRealtimeMs else sentAtElapsedRealtimeMs <= lastAppliedSentAtElapsedRealtimeMs) &&
             // Timestamps from another phone's clock (new host, old placeholder) can be far apart: not "stale".
             lastAppliedSentAtElapsedRealtimeMs - sentAtElapsedRealtimeMs < MaxReorderMs
 

@@ -280,6 +280,9 @@ class TogetherServer(
         return true
     }
 
+    /** Spry: serves a guest that arrives through the Firebase tunnel, without a local socket. */
+    suspend fun acceptTunnel(session: WebSocketSession) = session.handleClient()
+
     private suspend fun WebSocketSession.handleClient() {
         val helloText =
             try {

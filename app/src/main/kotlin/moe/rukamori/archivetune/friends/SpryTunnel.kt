@@ -15,9 +15,6 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.okhttp.OkHttp
-import io.ktor.client.plugins.websocket.webSocket
 import io.ktor.server.application.install
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.EmbeddedServer
@@ -40,12 +37,10 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.net.ServerSocket
-import io.ktor.client.plugins.websocket.WebSockets as ClientWebSockets
 
 object SpryTunnel {
     private val io = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val db get() = FirebaseDatabase.getInstance()
-    private val client by lazy { HttpClient(OkHttp) { install(ClientWebSockets) } }
 
     private var hostJob: Job? = null
     private var guestServer: EmbeddedServer<*, *>? = null
@@ -146,10 +141,31 @@ object SpryTunnel {
         }
     }
 
+    /**
+     * One end of an in-memory websocket. Two of these with swapped channels connect the tunnel straight
+     * to the room server, with no loopback socket (some phones block an app connecting to itself).
+     */
+    private class PipeSession(
+        override val coroutineContext: kotlin.coroutines.CoroutineContext,
+        override val incoming: kotlinx.coroutines.channels.ReceiveChannel<Frame>,
+        override val outgoing: kotlinx.coroutines.channels.SendChannel<Frame>,
+    ) : WebSocketSession {
+        override var masking = false
+        override var maxFrameSize = Long.MAX_VALUE
+        override val extensions: List<io.ktor.websocket.WebSocketExtension<*>> = emptyList()
+
+        override suspend fun flush() = Unit
+
+        @Suppress("OVERRIDE_DEPRECATION")
+        override fun terminate() {
+            outgoing.close()
+        }
+    }
+
     /** [onReady] runs once old connections are cleared and new ones are being accepted. */
     fun startHost(
         myUid: String,
-        localPort: Int,
+        serve: suspend (WebSocketSession) -> Unit,
         onReady: () -> Unit,
     ) {
         stopHost()
@@ -175,13 +191,24 @@ object SpryTunnel {
                         } else if (id !in conns) {
                             conns[id] =
                                 launch {
-                                    log("host: new guest connection $id -> local port $localPort")
-                                    runCatching {
-                                        client.webSocket("ws://127.0.0.1:$localPort/together") {
-                                            bridge(this, root.child(id), inbox = "up", outbox = "down", throttle = true)
+                                    log("host: new guest connection $id")
+                                    val toServer = Channel<Frame>(Channel.UNLIMITED)
+                                    val fromServer = Channel<Frame>(Channel.UNLIMITED)
+                                    launch {
+                                        try {
+                                            serve(PipeSession(coroutineContext, incoming = toServer, outgoing = fromServer))
+                                        } catch (t: Throwable) {
+                                            log("host: room server error: $t")
+                                        } finally {
+                                            fromServer.close()
                                         }
-                                    }.onFailure { log("host: local connect failed: $it") }
-                                    root.child(id).removeValue()
+                                    }
+                                    try {
+                                        bridge(PipeSession(coroutineContext, incoming = fromServer, outgoing = toServer), root.child(id), inbox = "up", outbox = "down", throttle = true)
+                                    } finally {
+                                        toServer.close() // guest gone: the room server sees the connection end and cleans up
+                                        root.child(id).removeValue()
+                                    }
                                 }
                         }
                     }

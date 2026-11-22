@@ -283,18 +283,18 @@ object SpryFriends {
     fun publishHosting(
         sessionId: String,
         sessionKey: String,
-        port: Int,
+        server: moe.rukamori.archivetune.together.TogetherServer,
     ) {
         val me = _user.value?.uid ?: return
         hosting = true
         val ref = db.getReference("sessions/$me")
         // Publish the room only once the tunnel accepts connections, then let waiting friends in.
-        SpryTunnel.startHost(me, port) {
+        SpryTunnel.startHost(me, server::acceptTunnel) {
             ref.onDisconnect().removeValue()
             ref.setValue(mapOf("sid" to sessionId, "key" to sessionKey)).addOnSuccessListener {
                 val waiting = synchronized(pendingAccepts) { pendingAccepts.toList().also { pendingAccepts.clear() } }
                 roomReady = true
-                SpryTunnel.log("host: room published on port $port, letting in ${waiting.size}")
+                SpryTunnel.log("host: room published, letting in ${waiting.size}")
                 waiting.forEach { db.getReference("vibe/$me/$it/ok").setValue(true) }
             }
         }

@@ -27,6 +27,12 @@ class TogetherPlaybackSyncTest {
     }
 
     @Test
+    fun `forced re-apply may repeat the newest state but not roll back`() {
+        assertFalse(TogetherPlaybackSync.isStaleRoomState(100_500, 100_500, force = true))
+        assertTrue(TogetherPlaybackSync.isStaleRoomState(100_000, 100_500, force = true))
+    }
+
+    @Test
     fun `nothing applied yet means nothing is stale`() {
         assertFalse(stale(sent = 100_000, last = 0))
     }
