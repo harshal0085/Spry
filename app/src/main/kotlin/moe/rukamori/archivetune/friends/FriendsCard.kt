@@ -198,3 +198,32 @@ fun VibeRequestDialog() {
         dismissButton = { TextButton(onClick = { SpryFriends.declineVibe(from) }) { Text("not now") } },
     )
 }
+
+/** Home screen: who's online right now. Hidden when signed out or nobody is online. */
+@Composable
+fun OnlineFriendsStrip(
+    onOpenFriends: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (!SpryFriends.isAvailable) return
+    val friends by SpryFriends.friends.collectAsState()
+    val online = friends.filter { it.online }
+    if (online.isEmpty()) return
+    Column(modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = "// online now",
+            style = MaterialTheme.typography.titleMedium,
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(online.size, key = { online[it].uid }) { i ->
+                OutlinedButton(onClick = onOpenFriends) {
+                    Box(Modifier.size(8.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+                    Text("  @${online[i].username}", fontFamily = FontFamily.Monospace)
+                }
+            }
+        }
+    }
+}

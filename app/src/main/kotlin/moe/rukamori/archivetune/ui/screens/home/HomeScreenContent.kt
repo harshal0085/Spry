@@ -144,6 +144,15 @@ internal fun HomeContent(
                         }
                     }
 
+                    if (!isFilterActive) {
+                        item(key = "home_friends_online", contentType = "friends_online") {
+                            moe.rukamori.archivetune.friends.OnlineFriendsStrip(
+                                onOpenFriends = { navController.navigate("settings/music_together") },
+                                modifier = Modifier.animateItem(),
+                            )
+                        }
+                    }
+
                     homeCommunitySection(
                         uiState = uiState,
                         mediaContext = mediaContext,
