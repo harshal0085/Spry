@@ -168,3 +168,6 @@
     public void d(...);
     public void i(...);
 }
+
+# Spry: org.json is also an Android platform class; renaming the bundled copy breaks Firebase Database.
+-keep class org.json.** { *; }

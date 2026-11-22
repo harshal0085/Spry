@@ -211,6 +211,13 @@ fun ScaffoldTopAppBar(
             },
             actions = {
                 val hasUpdate = splashDone && (updateState is UpdateState.SoftUpdate || updateState is UpdateState.CriticalUpdate)
+                // Spry: friends + vibe together, one tap from Home
+                androidx.compose.material3.IconButton(onClick = { navController.navigate("settings/music_together") }) {
+                    androidx.compose.material3.Icon(
+                        painter = androidx.compose.ui.res.painterResource(moe.rukamori.archivetune.R.drawable.person),
+                        contentDescription = "Friends",
+                    )
+                }
                 HomeTopBarAccountMenu(
                     avatarUrl = avatarUrl,
                     accountName = accountName,
