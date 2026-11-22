@@ -1,0 +1,25 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+  <!-- Spry: friends (two people), filled for the selected tab -->
+  <path
+      android:pathData="M9,4.5a3.5,3.5 0,1 1,0 7a3.5,3.5 0,1 1,0 -7z"
+      android:fillColor="#FFFFFF"/>
+  <path
+      android:pathData="M2.5,20C2.5,16.41 5.41,14 9,14C12.59,14 15.5,16.41 15.5,20Z"
+      android:fillColor="#FFFFFF"/>
+  <path
+      android:pathData="M15.5,4.8C16.95,5.25 18,6.6 18,8.2C18,9.8 16.95,11.15 15.5,11.6"
+      android:strokeWidth="1.5"
+      android:strokeLineCap="round"
+      android:fillColor="#00000000"
+      android:strokeColor="#FFFFFF"/>
+  <path
+      android:pathData="M17.5,14.3C19.83,14.9 21.5,16.9 21.5,20"
+      android:strokeWidth="1.5"
+      android:strokeLineCap="round"
+      android:fillColor="#00000000"
+      android:strokeColor="#FFFFFF"/>
+</vector>

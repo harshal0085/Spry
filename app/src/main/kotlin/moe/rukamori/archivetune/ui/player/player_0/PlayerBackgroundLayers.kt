@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
@@ -126,11 +127,6 @@ fun PlayerBackgroundLayers(
     Box(
         modifier = modifier
             .fillMaxSize()
-            // Spry "Crane": haze, φ construction, red sea and grain drawn over the background layers.
-            .drawWithContent {
-                drawContent()
-                with(moe.rukamori.archivetune.ui.component.CraneScenes) { player() }
-            }
             .drawWithCache {
                 if (state.isLiveBackgroundEnabled) {
                     onDrawBehind { }
@@ -251,6 +247,22 @@ fun PlayerBackgroundLayers(
                         currentExpansionProvider() > 0.05f
             }
         }
+
+        // Spry: the player sits on the song's dominant colour, darkened toward the controls.
+        moe.rukamori.archivetune.ui.component.SongColorBackground(targetUrl, Modifier.fillMaxSize(), darken = 0.4f)
+        Box(
+            Modifier
+                .fillMaxSize()
+                .drawBehind {
+                    drawRect(
+                        Brush.verticalGradient(
+                            0f to Color(0x33000000),
+                            0.5f to Color(0x66000000),
+                            1f to Color(0xD9000000),
+                        ),
+                    )
+                },
+        )
 
         val queueArtworkFade by remember {
             derivedStateOf {

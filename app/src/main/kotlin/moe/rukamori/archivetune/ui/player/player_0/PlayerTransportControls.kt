@@ -137,20 +137,7 @@ fun PlayerTransportControls(
                 modifier = Modifier
                     .weight(1f)
                     .height(CapsuleHeight)
-                    .clip(CircleShape)
-                    .background(animatedAccentColor.copy(alpha = 0.12f))
-                    .border(
-                        BorderStroke(
-                            CapsuleBorderWidth,
-                            Brush.verticalGradient(
-                                listOf(
-                                    animatedAccentColor.copy(alpha = 0.18f),
-                                    animatedAccentColor.copy(alpha = 0.08f),
-                                ),
-                            ),
-                        ),
-                        CircleShape,
-                    )
+                    // Spry: Apple Music-style bare controls, no capsule.
                     .padding(horizontal = CapsulePadHorizontal),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
@@ -184,23 +171,20 @@ fun PlayerTransportControls(
                             }
                         }
                         .size(CenterButtonSize)
-                        .clip(CircleShape)
-                        .drawBehind {
-                            drawCircle(animatedAccentColor)
-                        },
+                        .clip(CircleShape),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (state.isLoading) {
                         CircularWavyProgressIndicator(
                             modifier = Modifier.size(CenterIconSize - 12.dp),
-                            color = Color(0xFF121212),
+                            color = Color.White,
                         )
                     } else {
                         Image(
                             painter = rememberVectorPainter(playPauseIcon),
                             contentDescription = stringResource(R.string.play_pause),
                             modifier = Modifier.size(CenterIconSize),
-                            colorFilter = ColorFilter.tint(Color(0xFF121212)),
+                            colorFilter = ColorFilter.tint(Color.White),
                         )
                     }
                 }

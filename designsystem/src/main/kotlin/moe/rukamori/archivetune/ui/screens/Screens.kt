@@ -25,6 +25,14 @@ sealed class Screens(
         route = "home",
     )
 
+    // Spry: friends get their own tab, between Home and Search.
+    object Friends : Screens(
+        titleId = R.string.spry_friends,
+        iconIdInactive = R.drawable.ic_friends_outline,
+        iconIdActive = R.drawable.ic_friends,
+        route = "friends",
+    )
+
     object Search : Screens(
         titleId = R.string.search,
         iconIdInactive = R.drawable.ic_search,
@@ -47,7 +55,7 @@ sealed class Screens(
     )
 
     companion object {
-        val MainScreens = listOf(Home, Search, Library)
+        val MainScreens = listOf(Home, Friends, Search, Library)
         val TvMainScreens = listOf(Home, Search, Library)
     }
 }

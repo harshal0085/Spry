@@ -29,7 +29,9 @@ val LocalHomeBackgroundStyle = compositionLocalOf { HomeBackgroundSettings() }
 fun ScreenBackground(modifier: Modifier = Modifier, isVisible: Boolean = true) {
     val homeBackground = LocalHomeBackgroundStyle.current
 
-    if (homeBackground.style == HomeBackgroundStyle.OFF || !isVisible) {
+    // Spry: the song-colour background behind every screen is the app's only background; Yuma's effects are retired.
+    val sprySuppressed = true
+    if (sprySuppressed || homeBackground.style == HomeBackgroundStyle.OFF || !isVisible) {
         return
     }
 

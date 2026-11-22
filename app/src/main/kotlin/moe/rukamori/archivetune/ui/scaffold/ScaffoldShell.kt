@@ -12,6 +12,7 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -98,6 +99,9 @@ fun ScaffoldShell(
     BoxWithConstraints(
         modifier = Modifier.fillMaxSize().background(if (pureBlack) Color.Black else MaterialTheme.colorScheme.surface),
     ) {
+        // Spry: the whole app sits on the playing song's dominant colour.
+        val artUrl = playerConnection?.mediaMetadata?.collectAsState()?.value?.thumbnailUrl
+        moe.rukamori.archivetune.ui.component.SongColorBackground(artUrl, Modifier.fillMaxSize(), darken = 0.68f)
         val appState = rememberScaffoldAppState(
             activity = activity,
             navController = navController,

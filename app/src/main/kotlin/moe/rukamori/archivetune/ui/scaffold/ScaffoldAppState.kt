@@ -151,7 +151,8 @@ fun rememberScaffoldAppState(
         navBackStackEntry?.destination?.route == null ||
             navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route } && !searchState.active
     }
-    val shouldShowTopBar = !searchState.active && currentRoute in topLevelScreens && currentRoute != "settings"
+    val shouldShowTopBar = !searchState.active && currentRoute in topLevelScreens && currentRoute != "settings" &&
+        currentRoute != Screens.Friends.route // the Friends tab draws its own large title
 
     val allLocalItems by homeViewModel.allLocalItems.collectAsStateWithLifecycle()
     val allYtItems by homeViewModel.allYtItems.collectAsStateWithLifecycle()

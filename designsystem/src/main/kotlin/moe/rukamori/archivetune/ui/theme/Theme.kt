@@ -163,17 +163,17 @@ fun ArchiveTuneTheme(
 }
 
 /**
- * Spry "Crane" palette: ink-black ground, paper-white type, vermilion for live things.
+ * Spry palette: neutral white type on dusk black. The album art (bead mosaic) brings the colour.
  * Red is reserved for live things (online, playing, together) and the player's red field.
  */
-val SpryRed = Color(0xFFE0261C)
-val SpryCharcoal = Color(0xFF0A0909)
+val SpryRed = Color(0xFFF4F1F8) // primary: soft white (kept name for existing callers)
+val SpryCharcoal = Color(0xFF0B0A10)
 
 val SpryColorScheme =
     darkColorScheme(
         primary = SpryRed,
-        onPrimary = Color(0xFFEFEAE2),
-        primaryContainer = Color(0xFF3A0B08),
+        onPrimary = Color(0xFF0B0A10),
+        primaryContainer = Color(0xFF2A2833),
         onPrimaryContainer = Color(0xFFFFDAD6),
         inversePrimary = Color(0xFFB00000),
         secondary = Color(0xFFFF6B6B),
@@ -185,24 +185,24 @@ val SpryColorScheme =
         tertiaryContainer = Color(0xFF1F1F1F),
         onTertiaryContainer = Color.White,
         background = SpryCharcoal,
-        onBackground = Color(0xFFEFEAE2),
+        onBackground = Color(0xFFF4F1F8),
         surface = SpryCharcoal,
-        onSurface = Color(0xFFEFEAE2),
-        surfaceVariant = Color(0xFF1C1A19),
-        onSurfaceVariant = Color(0xFF9A938A),
+        onSurface = Color(0xFFF4F1F8),
+        surfaceVariant = Color(0xFF1C1A24),
+        onSurfaceVariant = Color(0xFFA29EAE),
         surfaceTint = SpryRed,
         inverseSurface = Color(0xFFF2F2F2),
         inverseOnSurface = SpryCharcoal,
-        outline = Color(0xFF3A3634),
-        outlineVariant = Color(0xFF221F1E),
+        outline = Color(0xFF3A3746),
+        outlineVariant = Color(0xFF221F2B),
         scrim = Color.Black,
         surfaceBright = Color(0xFF2A2A2A),
         surfaceDim = Color(0xFF0E0E0E),
         surfaceContainerLowest = Color(0xFF0E0E0E),
-        surfaceContainerLow = Color(0xFF121010),
-        surfaceContainer = Color(0xFF161413),
-        surfaceContainerHigh = Color(0xFF1C1A19),
-        surfaceContainerHighest = Color(0xFF232020),
+        surfaceContainerLow = Color(0xFF121119),
+        surfaceContainer = Color(0xFF16141F),
+        surfaceContainerHigh = Color(0xFF1C1A26),
+        surfaceContainerHighest = Color(0xFF24212F),
     )
 
 @Composable

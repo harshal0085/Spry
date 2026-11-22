@@ -7,6 +7,7 @@ internal fun findTabForRoute(route: String?): Screens? {
     return when {
         route == Screens.Home.route -> Screens.Home
         route == Screens.Search.route -> Screens.Search
+        route == Screens.Friends.route -> Screens.Friends
         route == Screens.Library.route -> Screens.Library
 
         // Library sub-routes (e.g. Cache playlist, local library screens)
