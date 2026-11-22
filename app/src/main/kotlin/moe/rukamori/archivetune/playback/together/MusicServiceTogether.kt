@@ -352,7 +352,8 @@ internal fun MusicService.joinTogether(
 
     ioScope.launch(SilentHandler) {
         stopTogetherInternal()
-        togetherIsOnlineSession = false
+        // Spry: friend sessions arrive via a localhost bridge to Firebase; internet latency needs the online sync tolerances.
+        togetherIsOnlineSession = joinInfo.host == "127.0.0.1"
         val client =
             moe.rukamori.archivetune.together.TogetherClient(
                 ioScope,

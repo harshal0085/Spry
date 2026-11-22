@@ -207,9 +207,21 @@ fun OnlineFriendsStrip(
 ) {
     if (!SpryFriends.isAvailable) return
     val friends by SpryFriends.friends.collectAsState()
+    val requests by SpryFriends.requests.collectAsState()
+    val scope = rememberCoroutineScope()
     val online = friends.filter { it.online }
-    if (online.isEmpty()) return
+    if (online.isEmpty() && requests.isEmpty()) return
     Column(modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        requests.forEach { p ->
+            Card(Modifier.fillMaxWidth()) {
+                Row(Modifier.padding(start = 16.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("@${p.username} wants to be friends", fontFamily = FontFamily.Monospace, modifier = Modifier.weight(1f))
+                    TextButton(onClick = { scope.launch { SpryFriends.accept(p) } }) { Text("accept") }
+                    TextButton(onClick = { scope.launch { SpryFriends.decline(p) } }) { Text("no") }
+                }
+            }
+        }
+        if (online.isEmpty()) return@Column
         Text(
             text = "// online now",
             style = MaterialTheme.typography.titleMedium,

@@ -218,6 +218,10 @@ internal class ServiceTogetherCoordinator(
 
         withContext(Dispatchers.Main) {
             val player = playerProvider()
+            android.util.Log.i(
+                "SpryTogether",
+                "room state playing=${state.isPlaying} idx=${state.currentIndex} pos=${state.positionMs} target=$targetPos local=${player.currentPosition} localPlaying=${player.playWhenReady} online=${configCollector.togetherIsOnlineSession}",
+            )
             configCollector.togetherApplyingRemote = true
             configCollector.togetherSuppressEchoUntilElapsedMs =
                 TogetherPlaybackSync.echoSuppressionUntil(
