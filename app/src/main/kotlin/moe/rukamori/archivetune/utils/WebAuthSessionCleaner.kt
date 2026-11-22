@@ -1,0 +1,100 @@
+/*
+ * YumaPlayer (2026) | Modified work by MuwMix
+ * ArchiveTune (2026) | Original work by © Rukamori
+ * GPL-3.0 License | Contributors: see git history
+ */
+
+package moe.rukamori.archivetune.utils
+
+import android.annotation.SuppressLint
+import android.content.Context
+import android.webkit.CookieManager
+import android.webkit.WebSettings
+import android.webkit.WebStorage
+import android.webkit.WebView
+import android.webkit.WebViewDatabase
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
+import kotlin.coroutines.resume
+
+fun getCleanChromeUserAgent(context: Context): String {
+    val defaultUa = WebSettings.getDefaultUserAgent(context)
+    return defaultUa
+        .replace("; wv", "")
+        .replace(Regex("Version/\\d+\\.\\d+\\s?"), "")
+}
+
+fun clearPlaybackWebAuthSession(context: Context) {
+    clearWebAuthStorage(context)
+    val cookieManager = CookieManager.getInstance()
+    cookieManager.removeSessionCookies(null)
+    cookieManager.removeAllCookies(null)
+    cookieManager.flush()
+}
+
+suspend fun clearWebAuthSession(context: Context) {
+    withContext(Dispatchers.Main.immediate) {
+        clearWebAuthStorage(context)
+        val cookieManager = CookieManager.getInstance()
+        suspendCancellableCoroutine<Unit> { continuation ->
+            cookieManager.removeSessionCookies {
+                cookieManager.removeAllCookies {
+                    cookieManager.flush()
+                    if (continuation.isActive) {
+                        continuation.resume(Unit)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Compose parents (bottom sheet, pager) otherwise steal vertical drags from the page.
+@SuppressLint("ClickableViewAccessibility")
+fun WebView.keepScrollGestures() {
+    setOnTouchListener { view, _ ->
+        view.parent?.requestDisallowInterceptTouchEvent(true)
+        false
+    }
+}
+
+fun resetAuthWebViewSession(
+    context: Context,
+    webView: WebView,
+    clearCookies: Boolean = true,
+    onReady: () -> Unit,
+) {
+    webView.stopLoading()
+    webView.clearHistory()
+    webView.clearFormData()
+    webView.clearCache(true)
+    clearWebAuthStorage(context)
+
+    val cookieManager = CookieManager.getInstance()
+    cookieManager.setAcceptCookie(true)
+    cookieManager.setAcceptThirdPartyCookies(webView, true)
+    if (!clearCookies) {
+        onReady()
+        return
+    }
+
+    cookieManager.removeSessionCookies {
+        cookieManager.removeAllCookies {
+            cookieManager.flush()
+            cookieManager.setAcceptCookie(true)
+            cookieManager.setAcceptThirdPartyCookies(webView, true)
+            onReady()
+        }
+    }
+}
+
+private fun clearWebAuthStorage(context: Context) {
+    val appContext = context.applicationContext
+    WebStorage.getInstance().deleteAllData()
+    WebViewDatabase.getInstance(appContext).apply {
+        clearFormData()
+        clearHttpAuthUsernamePassword()
+        clearUsernamePassword()
+    }
+}
