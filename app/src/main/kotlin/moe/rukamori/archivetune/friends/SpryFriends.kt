@@ -91,6 +91,10 @@ object SpryFriends {
     @Volatile
     private var hosting = false
 
+    @Volatile
+    private var roomReady = false
+    private val pendingAccepts = mutableSetOf<String>()
+
     private val subs = mutableListOf<Pair<Query, ValueEventListener>>()
     private val friendSubs = mutableListOf<Pair<Query, ValueEventListener>>()
     private var friendNames = emptyMap<String, String>()
@@ -153,6 +157,7 @@ object SpryFriends {
             _incomingVibes.value =
                 snap.children
                     .filter { it.child("ok").getValue(Boolean::class.java) != true }
+                    .filter { synchronized(pendingAccepts) { it.key !in pendingAccepts } }
                     .mapNotNull { c -> c.child("name").getValue(String::class.java)?.let { Person(c.key!!, it) } }
         }
 
@@ -274,13 +279,20 @@ object SpryFriends {
         val me = _user.value?.uid ?: return
         hosting = true
         val ref = db.getReference("sessions/$me")
-        ref.onDisconnect().removeValue()
-        ref.setValue(mapOf("sid" to sessionId, "key" to sessionKey))
-        SpryTunnel.startHost(me, port)
+        // Publish the room only once the tunnel accepts connections, then let waiting friends in.
+        SpryTunnel.startHost(me, port) {
+            ref.onDisconnect().removeValue()
+            ref.setValue(mapOf("sid" to sessionId, "key" to sessionKey)).addOnSuccessListener {
+                val waiting = synchronized(pendingAccepts) { pendingAccepts.toList().also { pendingAccepts.clear() } }
+                roomReady = true
+                waiting.forEach { db.getReference("vibe/$me/$it/ok").setValue(true) }
+            }
+        }
     }
 
     fun unpublishHosting() {
         hosting = false
+        roomReady = false
         SpryTunnel.stopHost()
         val me = _user.value?.uid ?: return
         db.getReference("sessions/$me").removeValue()
@@ -333,9 +345,11 @@ object SpryFriends {
                     false -> _vibeStatus.value = "@${friend.username} said not now"
 
                     true -> {
-                        // Their room starts a moment after they accept.
-                        val live = withTimeoutOrNull(20_000) { friends.first { list -> list.any { it.uid == friend.uid && it.session != null } } }
-                        val link = live?.firstOrNull { it.uid == friend.uid }?.let { joinLink(it) }
+                        // They only accept once their room is published, so read it fresh (never a stale cached one).
+                        val snap = runCatching { db.getReference("sessions/${friend.uid}").get().await() }.getOrNull()
+                        val sid = snap?.child("sid")?.getValue(String::class.java)
+                        val key = snap?.child("key")?.getValue(String::class.java)
+                        val link = if (sid != null && key != null) joinLink(friend.copy(session = HostedSession(sid, key))) else null
                         ref.removeValue()
                         if (link == null) {
                             _vibeStatus.value = "couldn't connect to @${friend.username}"
@@ -354,11 +368,17 @@ object SpryFriends {
         service: MusicService,
     ) {
         val me = _user.value?.uid ?: return
+        if (roomReady) {
+            db.getReference("vibe/$me/${from.uid}/ok").setValue(true)
+            return
+        }
+        synchronized(pendingAccepts) { pendingAccepts += from.uid }
+        // Hide the dialog right away; "ok" is written once the room is published.
+        _incomingVibes.value = _incomingVibes.value.filter { it.uid != from.uid }
         if (!hosting) {
             val port = ServerSocket(0).use { it.localPort }
             service.startTogetherHost(port, _username.value.orEmpty(), TogetherRoomSettings())
         }
-        db.getReference("vibe/$me/${from.uid}/ok").setValue(true)
     }
 
     fun declineVibe(from: Person) {

@@ -100,9 +100,11 @@ object SpryTunnel {
         }
     }
 
+    /** [onReady] runs once old connections are cleared and new ones are being accepted. */
     fun startHost(
         myUid: String,
         localPort: Int,
+        onReady: () -> Unit,
     ) {
         stopHost()
         val root = db.getReference("tunnel/$myUid")
@@ -119,6 +121,7 @@ object SpryTunnel {
                         onRemoved = { events.trySend(it.key!! to false) },
                         onCancelled = { events.close() },
                     )
+                onReady()
                 try {
                     for ((id, added) in events) {
                         if (!added) {
