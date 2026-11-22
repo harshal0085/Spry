@@ -3,11 +3,11 @@ package moe.rukamori.archivetune.ui.player.player_0
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 
-// Spry "Red field": the full player sits on deep blood red (like the red-field photographs),
+// Spry "Crane": the full player sits on ink black; its haze and red sea are drawn by CraneScenes,
 // with a warm cream accent instead of extracted artwork colours.
-private const val SpryFieldDeep = 0xFF4A0806.toInt()
-private const val SpryFieldGlow = 0xFF8E120E.toInt()
-private const val SpryCream = 0xFFF6E3D6.toInt()
+private const val SpryFieldDeep = 0xFF0A0909.toInt()
+private const val SpryFieldGlow = 0xFF1A0705.toInt()
+private const val SpryCream = 0xFFEFEAE2.toInt()
 
 /**
  * Spry: the player always uses the fixed red-field palette instead of colors extracted

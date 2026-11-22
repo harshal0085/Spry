@@ -163,17 +163,17 @@ fun ArchiveTuneTheme(
 }
 
 /**
- * Spry "Signal" palette: charcoal ground and white type, like ink-on-charcoal ASCII posters.
+ * Spry "Crane" palette: ink-black ground, paper-white type, vermilion for live things.
  * Red is reserved for live things (online, playing, together) and the player's red field.
  */
-val SpryRed = Color(0xFFFF2A1F)
-val SpryCharcoal = Color(0xFF141414)
+val SpryRed = Color(0xFFE0261C)
+val SpryCharcoal = Color(0xFF0A0909)
 
 val SpryColorScheme =
     darkColorScheme(
         primary = SpryRed,
-        onPrimary = Color.Black,
-        primaryContainer = Color(0xFF3A0A0A),
+        onPrimary = Color(0xFFEFEAE2),
+        primaryContainer = Color(0xFF3A0B08),
         onPrimaryContainer = Color(0xFFFFDAD6),
         inversePrimary = Color(0xFFB00000),
         secondary = Color(0xFFFF6B6B),
@@ -185,24 +185,24 @@ val SpryColorScheme =
         tertiaryContainer = Color(0xFF1F1F1F),
         onTertiaryContainer = Color.White,
         background = SpryCharcoal,
-        onBackground = Color(0xFFEDEDED),
+        onBackground = Color(0xFFEFEAE2),
         surface = SpryCharcoal,
-        onSurface = Color(0xFFEDEDED),
-        surfaceVariant = Color(0xFF1E1E1E),
-        onSurfaceVariant = Color(0xFF8A8A8A),
+        onSurface = Color(0xFFEFEAE2),
+        surfaceVariant = Color(0xFF1C1A19),
+        onSurfaceVariant = Color(0xFF9A938A),
         surfaceTint = SpryRed,
         inverseSurface = Color(0xFFF2F2F2),
         inverseOnSurface = SpryCharcoal,
-        outline = Color(0xFF3C3C3C),
-        outlineVariant = Color(0xFF262626),
+        outline = Color(0xFF3A3634),
+        outlineVariant = Color(0xFF221F1E),
         scrim = Color.Black,
         surfaceBright = Color(0xFF2A2A2A),
         surfaceDim = Color(0xFF0E0E0E),
         surfaceContainerLowest = Color(0xFF0E0E0E),
-        surfaceContainerLow = Color(0xFF181818),
-        surfaceContainer = Color(0xFF1B1B1B),
-        surfaceContainerHigh = Color(0xFF212121),
-        surfaceContainerHighest = Color(0xFF282828),
+        surfaceContainerLow = Color(0xFF121010),
+        surfaceContainer = Color(0xFF161413),
+        surfaceContainerHigh = Color(0xFF1C1A19),
+        surfaceContainerHighest = Color(0xFF232020),
     )
 
 @Composable

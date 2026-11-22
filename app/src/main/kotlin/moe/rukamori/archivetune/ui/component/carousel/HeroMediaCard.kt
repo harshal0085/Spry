@@ -30,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
@@ -115,10 +116,19 @@ internal fun HeroMediaCard(
                         }
                     )
             ) {
-                // Spry "Signal": the hero artwork is drawn as fine ASCII on charcoal.
-                moe.rukamori.archivetune.ui.component.SpryAsciiArt(
-                    url = item.thumbnailUrl,
+                AsyncImage(
+                    model = imageRequest,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize(),
+                )
+                // Spry "Crane": veil the art in ink, let light bleed from it, lay the φ construction and grain over it.
+                androidx.compose.foundation.layout.Spacer(
+                    Modifier.fillMaxSize().drawBehind { with(moe.rukamori.archivetune.ui.component.CraneScenes) { hero() } },
+                )
+                moe.rukamori.archivetune.ui.component.CraneBand(
+                    text = "今夜の音",
+                    modifier = Modifier.align(Alignment.TopEnd).padding(end = 26.dp),
                 )
             }
 

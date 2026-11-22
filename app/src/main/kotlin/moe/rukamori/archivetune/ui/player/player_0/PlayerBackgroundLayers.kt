@@ -27,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -125,6 +126,11 @@ fun PlayerBackgroundLayers(
     Box(
         modifier = modifier
             .fillMaxSize()
+            // Spry "Crane": haze, φ construction, red sea and grain drawn over the background layers.
+            .drawWithContent {
+                drawContent()
+                with(moe.rukamori.archivetune.ui.component.CraneScenes) { player() }
+            }
             .drawWithCache {
                 if (state.isLiveBackgroundEnabled) {
                     onDrawBehind { }
