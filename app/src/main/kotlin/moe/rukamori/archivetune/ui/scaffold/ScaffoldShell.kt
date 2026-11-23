@@ -119,6 +119,7 @@ fun ScaffoldShell(
 
         CompositionLocalProvider(
             moe.rukamori.archivetune.ui.theme.LocalSongColor provides songColor,
+            moe.rukamori.archivetune.ui.theme.LocalGlassTilt provides moe.rukamori.archivetune.ui.component.rememberGlassTilt(),
             LocalYumaHaptics provides appState.yumaHaptics,
             LocalHapticFeedback provides appState.customHaptic,
             LocalAnimationsDisabled provides disableAnimations,

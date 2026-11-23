@@ -18,6 +18,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.geometry.Size
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -99,41 +105,68 @@ fun Modifier.spryGlass(
 ): Modifier {
     val top = lerp(tint, Ink, 0.62f).copy(alpha = 0.62f * fillAlpha)
     val bottom = lerp(tint, Ink, 0.84f).copy(alpha = 0.78f * fillAlpha)
+    val tilt = LocalGlassTilt.current
     return this
         .clip(shape)
         .background(Brush.verticalGradient(listOf(top, bottom)))
-        .background(
-            Brush.linearGradient(
-                0f to Color.White.copy(alpha = 0.09f),
-                0.42f to Color.Transparent,
-                1f to Color.Transparent,
-            ),
-        )
-        .border(
-            rim,
-            Brush.linearGradient(
-                0f to Color.White.copy(alpha = 0.55f),
-                0.35f to Color.White.copy(alpha = 0.10f),
-                0.7f to Color.White.copy(alpha = 0.06f),
-                1f to Color.White.copy(alpha = 0.32f),
-            ),
-            shape,
-        )
-        .then(
-            if (!glints) {
-                Modifier
-            } else {
-                Modifier.drawWithContent {
-                    drawContent()
-                    fun glint(at: Offset, r: Float) = drawCircle(
-                        Brush.radialGradient(listOf(Color.White.copy(alpha = 0.85f), Color.Transparent), at, r),
-                        r,
-                        at,
-                    )
-                    glint(Offset(size.width * 0.84f, 0f), 7.dp.toPx())
-                    glint(Offset(size.width * 0.14f, size.height), 6.dp.toPx())
-                    glint(Offset(size.width, size.height * 0.35f), 4.dp.toPx())
-                }
-            },
-        )
+        .drawWithContent {
+            // tilt is read here, in the draw phase, so phone movement only redraws: no recomposition.
+            val t = tilt.value
+            val w = size.width
+            val h = size.height
+            val lx = (0.15f - t.x * 0.6f)
+            val ly = (-0.1f + t.y * 0.5f)
+            val lightStart = Offset(w * lx, h * ly)
+            val lightEnd = Offset(w * (1f - lx), h * (1f - ly))
+            // diagonal sheen that follows the light
+            drawRect(
+                Brush.linearGradient(
+                    0f to Color.White.copy(alpha = 0.10f),
+                    0.42f to Color.Transparent,
+                    1f to Color.Transparent,
+                    start = lightStart,
+                    end = lightEnd,
+                ),
+            )
+            // thickness: a soft dark band inside the bottom edge
+            val depth = 14.dp.toPx().coerceAtMost(h / 3f)
+            drawRect(
+                Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.22f)), startY = h - depth, endY = h),
+                topLeft = Offset(0f, h - depth),
+            )
+            drawContent()
+            val outline = shape.createOutline(size, layoutDirection, this)
+            // outer rim: bright where the light hits, fading, catching again on the far edge
+            drawOutline(
+                outline,
+                Brush.linearGradient(
+                    0f to Color.White.copy(alpha = 0.6f),
+                    0.35f to Color.White.copy(alpha = 0.10f),
+                    0.7f to Color.White.copy(alpha = 0.06f),
+                    1f to Color.White.copy(alpha = 0.34f),
+                    start = lightStart,
+                    end = lightEnd,
+                ),
+                style = Stroke(rim.toPx() * 2f), // half falls outside the clip, leaving a [rim]-wide edge
+            )
+            // inner rim: a faint second edge that sells the glass thickness
+            val inset = rim.toPx() * 2.5f
+            val inner = shape.createOutline(Size(w - inset * 2, h - inset * 2), layoutDirection, this)
+            translate(inset, inset) {
+                drawOutline(inner, Color.White.copy(alpha = 0.06f), style = Stroke(rim.toPx()))
+            }
+            if (glints) {
+                fun glint(at: Offset, r: Float) = drawCircle(
+                    Brush.radialGradient(listOf(Color.White.copy(alpha = 0.85f), Color.Transparent), at, r),
+                    r,
+                    at,
+                )
+                glint(Offset(w * (0.84f - t.x * 0.35f).coerceIn(0.08f, 0.92f), 0f), 7.dp.toPx())
+                glint(Offset(w * (0.14f - t.x * 0.35f).coerceIn(0.08f, 0.92f), h), 6.dp.toPx())
+                glint(Offset(w, h * (0.35f + t.y * 0.3f).coerceIn(0.15f, 0.85f)), 4.dp.toPx())
+            }
+        }
 }
+
+/** Phone tilt in -1..1 per axis (x: left/right, y: forward/back), relative to how the phone is usually held. */
+val LocalGlassTilt = compositionLocalOf<State<Offset>> { mutableStateOf(Offset.Zero) }

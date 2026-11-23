@@ -150,8 +150,10 @@ object SpryFriends {
         _friends.value = emptyList()
         _incomingVibes.value = emptyList()
         _incomingInvites.value = emptyList()
+        resetDevState()
         if (u == null) return
         val me = u.uid
+        startDevWatch(me)
 
         listen(db.getReference("users/$me/username")) { _username.value = it.getValue(String::class.java).orEmpty() }
 
@@ -436,6 +438,156 @@ object SpryFriends {
     fun declineInvite(from: Person) {
         val me = _user.value?.uid ?: return
         db.getReference("invites/$me/${from.uid}").removeValue()
+    }
+
+    // ---------------------------------------------------------------- developer powers
+    // Who is a developer is decided only in the Firebase console (admins/{uid} = true); the
+    // database rules enforce every power below, the app just shows the controls.
+
+    data class UserRow(
+        val uid: String,
+        val username: String,
+        val online: Boolean,
+        val hosting: Boolean,
+        val banned: Boolean,
+        val admin: Boolean,
+    )
+
+    private val _admins = MutableStateFlow<Set<String>>(emptySet())
+    val admins = _admins.asStateFlow()
+
+    private val _isAdmin = MutableStateFlow(false)
+    val isAdmin = _isAdmin.asStateFlow()
+
+    /** Non-null (the reason) when the developer has banned this account. */
+    private val _banned = MutableStateFlow<String?>(null)
+    val banned = _banned.asStateFlow()
+
+    /** The developer's current announcement: (sent-at millis, text). */
+    private val _announcement = MutableStateFlow<Pair<Long, String>?>(null)
+    val announcement = _announcement.asStateFlow()
+
+    private val _allUsers = MutableStateFlow<List<UserRow>>(emptyList())
+    val allUsers = _allUsers.asStateFlow()
+
+    private val adminSubs = mutableListOf<Pair<Query, ValueEventListener>>()
+    private var allNames = emptyMap<String, String>()
+    private var allOnline = emptyMap<String, Boolean>()
+    private var allSessions = emptyMap<String, HostedSession>()
+    private var allBans = emptySet<String>()
+
+    private fun startDevWatch(me: String) {
+        listen(db.getReference("admins")) { snap ->
+            _admins.value = snap.children.filter { it.getValue(Boolean::class.java) == true }.mapNotNull { it.key }.toSet()
+            val nowAdmin = me in _admins.value
+            if (nowAdmin != _isAdmin.value) {
+                _isAdmin.value = nowAdmin
+                if (nowAdmin) startAdminListeners() else detach(adminSubs).also { _allUsers.value = emptyList() }
+            }
+        }
+        listen(db.getReference("bans/$me")) { _banned.value = it.getValue(String::class.java) }
+        listen(db.getReference("announcement")) { s ->
+            val at = s.child("at").getValue(Long::class.java)
+            val text = s.child("text").getValue(String::class.java)
+            _announcement.value = if (at != null && !text.isNullOrBlank()) at to text else null
+        }
+    }
+
+    private fun resetDevState() {
+        detach(adminSubs)
+        _admins.value = emptySet()
+        _isAdmin.value = false
+        _banned.value = null
+        _announcement.value = null
+        _allUsers.value = emptyList()
+    }
+
+    private fun startAdminListeners() {
+        detach(adminSubs)
+        listen(db.getReference("users"), adminSubs) { s ->
+            allNames = s.children.associate { it.key!! to (it.child("username").getValue(String::class.java) ?: "") }
+            publishAllUsers()
+        }
+        listen(db.getReference("presence"), adminSubs) { s ->
+            allOnline = s.children.associate { it.key!! to (it.child("online").getValue(Boolean::class.java) == true) }
+            publishAllUsers()
+        }
+        listen(db.getReference("sessions"), adminSubs) { s ->
+            allSessions =
+                s.children.mapNotNull { c ->
+                    val sid = c.child("sid").getValue(String::class.java)
+                    val key = c.child("key").getValue(String::class.java)
+                    if (sid != null && key != null) c.key!! to HostedSession(sid, key) else null
+                }.toMap()
+            publishAllUsers()
+        }
+        listen(db.getReference("bans"), adminSubs) { s ->
+            allBans = s.children.mapNotNull { it.key }.toSet()
+            publishAllUsers()
+        }
+    }
+
+    private fun publishAllUsers() {
+        val me = _user.value?.uid
+        _allUsers.value =
+            (allNames.keys + allOnline.keys)
+                .filter { it != me }
+                .map { uid ->
+                    val online = allOnline[uid] == true
+                    UserRow(
+                        uid = uid,
+                        username = allNames[uid].orEmpty(),
+                        online = online,
+                        hosting = online && uid in allSessions,
+                        banned = uid in allBans,
+                        admin = uid in _admins.value,
+                    )
+                }.sortedWith(compareByDescending<UserRow> { it.online }.thenBy { it.username.ifEmpty { "~" } })
+    }
+
+    /** Returns an error message, or null on success. */
+    suspend fun ban(row: UserRow): String? =
+        runCatching { db.getReference("bans/${row.uid}").setValue("Banned by the developer").await() }
+            .exceptionOrNull()?.let { "Couldn't ban: ${it.message}" }
+
+    suspend fun unban(row: UserRow): String? =
+        runCatching { db.getReference("bans/${row.uid}").removeValue().await() }
+            .exceptionOrNull()?.let { "Couldn't unban: ${it.message}" }
+
+    /** Frees the username so they pick a new one next time they open Friends. */
+    suspend fun resetUsername(row: UserRow): String? {
+        if (row.username.isEmpty()) return "They have no username"
+        val updates = hashMapOf<String, Any?>("users/${row.uid}/username" to null, "usernames/${row.username}" to null)
+        return runCatching { db.reference.updateChildren(updates).await() }
+            .exceptionOrNull()?.let { "Couldn't reset: ${it.message}" }
+    }
+
+    suspend fun announce(text: String): String? {
+        val t = text.trim().take(500)
+        if (t.isEmpty()) return "Write something first"
+        return runCatching { db.getReference("announcement").setValue(mapOf("text" to t, "at" to ServerValue.TIMESTAMP)).await() }
+            .exceptionOrNull()?.let { "Couldn't send: ${it.message}" }
+    }
+
+    suspend fun clearAnnouncement(): String? =
+        runCatching { db.getReference("announcement").removeValue().await() }
+            .exceptionOrNull()?.let { "Couldn't clear: ${it.message}" }
+
+    /** Developer only: listen in on anyone who is hosting, without asking. */
+    fun adminJoin(row: UserRow, service: MusicService) {
+        val myName = _username.value?.takeIf { it.isNotEmpty() } ?: return
+        scope.launch {
+            val snap = runCatching { db.getReference("sessions/${row.uid}").get().await() }.getOrNull()
+            val sid = snap?.child("sid")?.getValue(String::class.java)
+            val key = snap?.child("key")?.getValue(String::class.java)
+            val link = if (sid != null && key != null) joinLink(Friend(row.uid, row.username, true, HostedSession(sid, key))) else null
+            if (link == null) {
+                _vibeStatus.value = "@${row.username} isn't hosting right now"
+            } else {
+                service.joinTogether(link, myName)
+                _vibeStatus.value = "listening in on @${row.username}"
+            }
+        }
     }
 
     /** Opens a local bridge to the friend's room and returns a join link the existing Music Together code understands. */

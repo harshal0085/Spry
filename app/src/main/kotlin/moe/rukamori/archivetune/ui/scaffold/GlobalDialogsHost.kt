@@ -394,6 +394,7 @@ fun BoxScope.GlobalDialogsHost(
     )
 
     moe.rukamori.archivetune.friends.VibeRequestDialog()
+    moe.rukamori.archivetune.friends.AnnouncementDialog()
 
     pendingBackupRestoreUri?.let { uri ->
         BackupRestoreFromIntentDialog(

@@ -40,5 +40,6 @@ fun FriendsScreen(navController: NavController) {
             modifier = Modifier.padding(top = 28.dp, bottom = 20.dp),
         )
         FriendsCard()
+        DeveloperPanel()
     }
 }
