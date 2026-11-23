@@ -83,6 +83,26 @@
         }
       }
     },
+    "chats": {
+      "$chat": {
+        ".read": "auth != null && ($chat.beginsWith(auth.uid + '_') || $chat.endsWith('_' + auth.uid)) && query.orderByChild === 'at' && query.startAt >= now - 86400000",
+        ".indexOn": ["at"],
+        "$msg": {
+          ".write": "auth != null && ($chat.beginsWith(auth.uid + '_') || $chat.endsWith('_' + auth.uid)) && ((!data.exists() && newData.child('from').val() === auth.uid && !root.child('bans').child(auth.uid).exists() && root.child('friends').child(auth.uid).child($chat.replace(auth.uid, '').replace('_', '')).exists()) || (data.exists() && !newData.exists() && (data.child('from').val() === auth.uid || data.child('at').val() < now - 86400000)) || (!data.exists() && !newData.exists()))",
+          ".validate": "newData.hasChildren(['from', 'text', 'at']) && newData.child('text').isString() && newData.child('text').val().length > 0 && newData.child('text').val().length <= 1000 && newData.child('at').val() === now"
+        }
+      }
+    },
+    "chatAt": {
+      "$chat": {
+        ".read": "auth != null && ($chat.beginsWith(auth.uid + '_') || $chat.endsWith('_' + auth.uid))",
+        ".indexOn": ".value",
+        "$msg": {
+          ".write": "auth != null && ($chat.beginsWith(auth.uid + '_') || $chat.endsWith('_' + auth.uid)) && ((!data.exists() && newData.val() === now && root.child('friends').child(auth.uid).child($chat.replace(auth.uid, '').replace('_', '')).exists()) || (data.exists() && !newData.exists() && (data.val() < now - 86400000 || root.child('chats').child($chat).child($msg).child('from').val() === auth.uid)) || (!data.exists() && !newData.exists()))",
+          ".validate": "newData.isNumber()"
+        }
+      }
+    },
     "tunnel": {
       "$host": {
         ".read": "auth != null && auth.uid === $host",

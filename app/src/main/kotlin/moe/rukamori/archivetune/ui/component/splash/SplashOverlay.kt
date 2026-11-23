@@ -77,10 +77,11 @@ fun SplashOverlay(
         if (animationsDisabled) {
             currentOnBurstStart(); currentOnDismiss(); return@LaunchedEffect
         }
-        brush.animateTo(1f, tween(950, easing = FastOutSlowInEasing))
-        launch { words.animateTo(1f, tween(500)) }
-        seal.animateTo(1f, tween(260, easing = FastOutSlowInEasing))
-        delay(450)
+        // Spry: about 1s from tap to music (was ~2s); the stroke, stamp and name still play in full.
+        launch { delay(350); words.animateTo(1f, tween(350)) }
+        brush.animateTo(1f, tween(620, easing = FastOutSlowInEasing))
+        seal.animateTo(1f, tween(180, easing = FastOutSlowInEasing))
+        delay(160)
         currentOnBurstStart()
         showSplash = false
         delay(SplashConfig.Reveal.FADE_MS.toLong())

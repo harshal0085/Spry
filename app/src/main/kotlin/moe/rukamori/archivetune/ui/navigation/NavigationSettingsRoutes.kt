@@ -108,6 +108,13 @@ internal fun NavGraphBuilder.settingsNavigationRoutes(
     composable("friends") {
         moe.rukamori.archivetune.friends.FriendsScreen(navController)
     }
+    composable("chat/{uid}/{name}") { entry ->
+        moe.rukamori.archivetune.friends.ChatScreen(
+            navController = navController,
+            friendUid = entry.arguments?.getString("uid").orEmpty(),
+            friendName = entry.arguments?.getString("name").orEmpty(),
+        )
+    }
     composable("settings/lastfm") {
         LastFMSettings(navController)
     }

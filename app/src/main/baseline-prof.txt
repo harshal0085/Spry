@@ -1,0 +1,8 @@
+# Spry baseline profile: ask ART to compile the app's UI ahead of time (Compose libraries ship their own).
+# Applied on install via the Play Store, or by Android's background optimisation after a sideload.
+HSPLmoe/rukamori/archivetune/ui/**;->**(**)**
+HSPLmoe/rukamori/archivetune/friends/**;->**(**)**
+HSPLmoe/rukamori/archivetune/home/**;->**(**)**
+Lmoe/rukamori/archivetune/ui/**;
+Lmoe/rukamori/archivetune/friends/**;
+Lmoe/rukamori/archivetune/home/**;

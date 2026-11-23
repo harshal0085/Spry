@@ -6,6 +6,7 @@
 package moe.rukamori.archivetune.friends
 
 import android.app.Activity
+import androidx.compose.material.icons.rounded.ChatBubbleOutline
 import moe.rukamori.archivetune.ui.theme.spryGlass
 import android.content.Context
 import android.content.ContextWrapper
@@ -53,7 +54,10 @@ private tailrec fun Context.findActivity(): Activity? =
     }
 
 @Composable
-fun FriendsCard(modifier: Modifier = Modifier) {
+fun FriendsCard(
+    modifier: Modifier = Modifier,
+    onChat: ((SpryFriends.Friend) -> Unit)? = null,
+) {
     if (!SpryFriends.isAvailable) return
     val context = LocalContext.current
     val service = LocalPlayerConnection.current?.service
@@ -178,6 +182,27 @@ fun FriendsCard(modifier: Modifier = Modifier) {
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
+                        }
+                        if (onChat != null) {
+                            val last by remember(f.uid) { SpryChat.lastActivity(f.uid) }.collectAsState(initial = null)
+                            val unread = last?.let { it > chatLastRead(context, f.uid) } == true
+                            Box {
+                                androidx.compose.material3.IconButton(onClick = { onChat(f) }) {
+                                    androidx.compose.material3.Icon(
+                                        androidx.compose.material.icons.Icons.Rounded.ChatBubbleOutline,
+                                        contentDescription = "Chat with @${f.username}",
+                                    )
+                                }
+                                if (unread) {
+                                    Box(
+                                        Modifier
+                                            .align(Alignment.TopEnd)
+                                            .padding(top = 10.dp, end = 10.dp)
+                                            .size(9.dp)
+                                            .background(androidx.compose.ui.graphics.Color.White, CircleShape),
+                                    )
+                                }
+                            }
                         }
                         if (f.online) {
                             OutlinedButton(enabled = service != null, onClick = { service?.let { SpryFriends.requestVibe(f, it) } }) { Text("Join") }

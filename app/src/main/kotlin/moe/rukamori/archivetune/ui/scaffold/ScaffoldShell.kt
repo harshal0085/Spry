@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
+import androidx.compose.ui.draw.drawBehind
 import moe.rukamori.archivetune.extensions.metadata
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -103,7 +104,7 @@ fun ScaffoldShell(
     ) {
         // Spry: the whole app sits on the playing song's dominant colour.
         val artUrl = playerConnection?.mediaMetadata?.collectAsState()?.value?.thumbnailUrl
-        val songColor = moe.rukamori.archivetune.ui.component.rememberSongColor(artUrl)
+        val songColor = moe.rukamori.archivetune.ui.component.rememberSongColorTarget(artUrl)
         // Work out the next song's colour while this one plays, so skipping recolours instantly.
         val colorContext = androidx.compose.ui.platform.LocalContext.current
         androidx.compose.runtime.LaunchedEffect(artUrl, playerConnection) {
@@ -114,7 +115,9 @@ fun ScaffoldShell(
         }
         val baseScheme = MaterialTheme.colorScheme
         val songScheme = remember(baseScheme, songColor) { moe.rukamori.archivetune.ui.theme.spryColorScheme(baseScheme, songColor) }
-        Box(Modifier.fillMaxSize().background(songScheme.background))
+        // The page colour fades in the draw phase; the palette itself switches once per song (no per-frame recomposition).
+        val pageColor = androidx.compose.animation.animateColorAsState(songScheme.background, androidx.compose.animation.core.tween(450), label = "PageColor")
+        Box(Modifier.fillMaxSize().drawBehind { drawRect(pageColor.value) })
         val appState = rememberScaffoldAppState(
             activity = activity,
             navController = navController,

@@ -22,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import moe.rukamori.archivetune.ui.screens.settings.components.playerAwareBottomPadding
 
-@Suppress("UNUSED_PARAMETER")
 @Composable
 fun FriendsScreen(navController: NavController) {
     Column(
@@ -39,7 +38,7 @@ fun FriendsScreen(navController: NavController) {
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(top = 28.dp, bottom = 20.dp),
         )
-        FriendsCard()
+        FriendsCard(onChat = { f -> navController.navigate("chat/${f.uid}/${android.net.Uri.encode(f.username)}") })
         DeveloperPanel()
     }
 }

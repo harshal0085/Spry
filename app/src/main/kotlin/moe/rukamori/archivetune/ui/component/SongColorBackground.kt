@@ -9,7 +9,7 @@ import android.content.Context
 import android.util.LruCache
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -41,8 +41,10 @@ fun SongColorBackground(
     darken: Float = 0.6f,
     ground: Color = Color(0xFF0B0A10),
 ) {
-    val song = rememberSongColor(url, ground)
-    Box(modifier.background(lerp(song, ground, darken)))
+    val target = rememberSongColorTarget(url, ground)
+    // Read in the draw phase only: the fade repaints this box, it never recomposes the screen.
+    val fill = animateColorAsState(lerp(target, ground, darken), tween(450), label = "SongFill")
+    Box(modifier.drawBehind { drawRect(fill.value) })
 }
 
 /** Toned cover colours by URL, so a song seen before (or prefetched) changes colour instantly. */
@@ -63,14 +65,17 @@ private suspend fun computeSongColor(context: Context, url: String): Color? =
         c?.also { songColors.put(url, it) }
     }
 
-/** [url]'s toned colour, animated between songs; [ground] until one is known. */
+/**
+ * [url]'s toned colour, NOT animated: it changes once per song. Callers that fade should do it in
+ * the draw phase (see [SongColorBackground]); animating this value recomposed the whole app every frame.
+ */
 @Composable
-fun rememberSongColor(url: String?, ground: Color = Color(0xFF0B0A10)): Color {
+fun rememberSongColorTarget(url: String?, ground: Color = Color(0xFF0B0A10)): Color {
     val context = LocalContext.current
-    var dominant by remember { mutableStateOf(ground) }
+    var dominant by remember { mutableStateOf(url?.let { songColors.get(it) } ?: ground) }
     LaunchedEffect(url) {
         if (url.isNullOrBlank()) return@LaunchedEffect
         dominant = songColors.get(url) ?: computeSongColor(context, url) ?: return@LaunchedEffect
     }
-    return animateColorAsState(dominant, tween(450), label = "SongDominant").value
+    return dominant
 }
