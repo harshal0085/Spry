@@ -1,8 +1,9 @@
 /*
  * Spry (2026) | 24-hour chat between friends.
  * Messages live under chats/{a_b}/{id} (a_b = the two uids, sorted) with a content-free index
- * chatAt/{a_b}/{id} = sent time. The database rules only serve messages younger than 24h and
- * let either friend delete expired ones; the app deletes them whenever a chat is opened.
+ * chatAt/{a_b}/{id} = sent time. Only the two friends can read a chat; the rules let either of
+ * them delete expired messages, and the app deletes them whenever a chat is opened and never
+ * shows anything older than 24h. (A query-limited read rule was refused by the server in testing.)
  * GPL-3.0 License
  */
 

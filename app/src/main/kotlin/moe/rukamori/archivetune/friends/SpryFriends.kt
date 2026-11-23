@@ -36,6 +36,7 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeoutOrNull
 import moe.rukamori.archivetune.playback.MusicService
 import moe.rukamori.archivetune.playback.together.joinTogether
+import moe.rukamori.archivetune.playback.together.leaveTogether
 import moe.rukamori.archivetune.playback.together.startTogetherHost
 import moe.rukamori.archivetune.playback.together.updateTogetherSettings
 import moe.rukamori.archivetune.together.TogetherRoomSettings
@@ -57,6 +58,8 @@ object SpryFriends {
         val username: String,
         val online: Boolean,
         val session: HostedSession?,
+        val playing: String? = null,
+        val lastSeen: Long? = null,
     )
 
     val USERNAME_REGEX = Regex("^[a-z0-9_]{3,20}$")
@@ -108,7 +111,10 @@ object SpryFriends {
     private val friendSubs = mutableListOf<Pair<Query, ValueEventListener>>()
     private var friendNames = emptyMap<String, String>()
     private val online = HashMap<String, Boolean>()
+    private val friendPlaying = HashMap<String, String?>()
+    private val friendSeen = HashMap<String, Long?>()
     private val sessions = HashMap<String, HostedSession>()
+    private var prefs: android.content.SharedPreferences? = null
 
     val isAvailable get() = available
 
@@ -117,6 +123,9 @@ object SpryFriends {
         // Builds without google-services.json have no Firebase config: friends stay hidden.
         available = runCatching { FirebaseApp.getApps(app).isNotEmpty() || FirebaseApp.initializeApp(app) != null }.getOrDefault(false)
         if (!available) return
+        prefs = app.getSharedPreferences("spry", Context.MODE_PRIVATE)
+        _hidden.value = prefs?.getBoolean("dev_hidden", false) == true
+        watchConfig()
         auth.addAuthStateListener { onUser(it.currentUser) }
     }
 
@@ -157,12 +166,8 @@ object SpryFriends {
 
         listen(db.getReference("users/$me/username")) { _username.value = it.getValue(String::class.java).orEmpty() }
 
-        val presence = db.getReference("presence/$me")
         listen(db.getReference(".info/connected")) {
-            if (it.getValue(Boolean::class.java) == true) {
-                presence.onDisconnect().setValue(mapOf("online" to false, "at" to ServerValue.TIMESTAMP))
-                presence.setValue(mapOf("online" to true, "at" to ServerValue.TIMESTAMP))
-            }
+            if (it.getValue(Boolean::class.java) == true) writePresence()
         }
 
         listen(db.getReference("invites/$me")) { snap ->
@@ -187,8 +192,10 @@ object SpryFriends {
             online.clear()
             sessions.clear()
             friendNames.keys.forEach { uid ->
-                listen(db.getReference("presence/$uid/online"), friendSubs) {
-                    online[uid] = it.getValue(Boolean::class.java) == true
+                listen(db.getReference("presence/$uid"), friendSubs) {
+                    online[uid] = it.child("online").getValue(Boolean::class.java) == true
+                    friendPlaying[uid] = it.child("playing").getValue(String::class.java)
+                    friendSeen[uid] = it.child("at").getValue(Long::class.java)
                     publishFriends()
                 }
                 listen(db.getReference("sessions/$uid"), friendSubs) {
@@ -205,7 +212,10 @@ object SpryFriends {
     private fun publishFriends() {
         _friends.value =
             friendNames
-                .map { (uid, name) -> Friend(uid, name, online[uid] == true, sessions[uid].takeIf { online[uid] == true }) }
+                .map { (uid, name) ->
+                    val on = online[uid] == true
+                    Friend(uid, name, on, sessions[uid].takeIf { on }, friendPlaying[uid].takeIf { on }, friendSeen[uid])
+                }
                 .sortedWith(compareByDescending<Friend> { it.online }.thenBy { it.username })
     }
 
@@ -451,7 +461,260 @@ object SpryFriends {
         val hosting: Boolean,
         val banned: Boolean,
         val admin: Boolean,
+        val playing: String? = null,
+        val lastSeen: Long? = null,
+        val badge: String? = null,
     )
+
+    data class FeaturedSong(val videoId: String, val title: String, val artist: String, val thumb: String)
+
+    data class RoomInfo(val uid: String, val title: String)
+
+    /** Remote switches the developer controls for everyone (config/ in the database, readable by all). */
+    data class SpryConfig(
+        val maintenanceOn: Boolean = false,
+        val maintenanceText: String = "",
+        val minVersion: Int = 0,
+        val updateUrl: String = DEFAULT_UPDATE_URL,
+        val featured: FeaturedSong? = null,
+        val room: RoomInfo? = null,
+    )
+
+    data class Alert(val id: String, val text: String)
+
+    data class Command(val type: String, val at: Long, val videoId: String?)
+
+    data class Stats(
+        val users: Int = 0,
+        val online: Int = 0,
+        val hosting: Int = 0,
+        val activeDay: Int = 0,
+        val activeWeek: Int = 0,
+        val banned: Int = 0,
+        val messagesToday: Int = 0,
+        val topPlaying: List<Pair<String, Int>> = emptyList(),
+    )
+
+    const val DEFAULT_UPDATE_URL = "https://github.com/harshal0085/Spry/releases"
+
+    private val _config = MutableStateFlow(SpryConfig())
+    val config = _config.asStateFlow()
+
+    private val _badges = MutableStateFlow<Map<String, String>>(emptyMap())
+    val badges = _badges.asStateFlow()
+
+    private val _alerts = MutableStateFlow<List<Alert>>(emptyList())
+    val alerts = _alerts.asStateFlow()
+
+    private val _command = MutableStateFlow<Command?>(null)
+    val command = _command.asStateFlow()
+
+    private val _hidden = MutableStateFlow(false)
+    val hidden = _hidden.asStateFlow()
+
+    private val _stats = MutableStateFlow(Stats())
+    val stats = _stats.asStateFlow()
+
+    private var allPresence = emptyMap<String, DataSnapshot>()
+    private var messageTimes = emptyList<Long>()
+    private var myPlaying: String? = null
+
+    private fun watchConfig() {
+        db.getReference("config").addValueEventListener(
+            object : ValueEventListener {
+                override fun onDataChange(s: DataSnapshot) {
+                    val f = s.child("featured")
+                    val r = s.child("room")
+                    _config.value =
+                        SpryConfig(
+                            maintenanceOn = s.child("maintenance/on").getValue(Boolean::class.java) == true,
+                            maintenanceText = s.child("maintenance/text").getValue(String::class.java).orEmpty(),
+                            minVersion = s.child("minVersion").getValue(Int::class.java) ?: 0,
+                            updateUrl = s.child("updateUrl").getValue(String::class.java)?.takeIf { it.isNotBlank() } ?: DEFAULT_UPDATE_URL,
+                            featured =
+                                f.child("videoId").getValue(String::class.java)?.let {
+                                    FeaturedSong(
+                                        it,
+                                        f.child("title").getValue(String::class.java).orEmpty(),
+                                        f.child("artist").getValue(String::class.java).orEmpty(),
+                                        f.child("thumb").getValue(String::class.java).orEmpty(),
+                                    )
+                                },
+                            room =
+                                r.child("uid").getValue(String::class.java)?.let {
+                                    RoomInfo(it, r.child("title").getValue(String::class.java).orEmpty())
+                                },
+                        )
+                }
+
+                override fun onCancelled(error: DatabaseError) = Unit
+            },
+        )
+    }
+
+    /** Writes my presence: online + what I'm playing, or "offline" when the developer is hidden. */
+    private fun writePresence() {
+        val me = _user.value?.uid ?: return
+        val ref = db.getReference("presence/$me")
+        ref.onDisconnect().setValue(mapOf("online" to false, "at" to ServerValue.TIMESTAMP))
+        val value = HashMap<String, Any>()
+        value["online"] = !_hidden.value
+        value["at"] = ServerValue.TIMESTAMP
+        if (!_hidden.value) myPlaying?.let { value["playing"] = it }
+        ref.setValue(value)
+    }
+
+    /** "Title · Artist" while music plays, null when paused. Friends see it as "Listening to …". */
+    fun setPlaying(text: String?) {
+        if (text == myPlaying) return
+        myPlaying = text
+        val me = _user.value?.uid ?: return
+        if (_hidden.value) return
+        val ref = db.getReference("presence/$me/playing")
+        if (text == null) ref.removeValue() else ref.setValue(text.take(120))
+    }
+
+    /** Developer only: appear offline (and hide what you're playing) while still seeing everyone. */
+    fun setHidden(on: Boolean) {
+        _hidden.value = on
+        prefs?.edit()?.putBoolean("dev_hidden", on)?.apply()
+        writePresence()
+    }
+
+    fun dismissAlert(alert: Alert) {
+        val me = _user.value?.uid ?: return
+        _alerts.value = _alerts.value.filter { it.id != alert.id }
+        db.getReference("alerts/$me/${alert.id}").removeValue()
+    }
+
+    /** The command was carried out on this phone; remove it so it never runs twice. */
+    fun commandHandled(cmd: Command) {
+        val me = _user.value?.uid ?: return
+        prefs?.edit()?.putLong("command_done", cmd.at)?.apply()
+        if (_command.value == cmd) _command.value = null
+        db.getReference("commands/$me").removeValue()
+    }
+
+    fun lastHandledCommandAt(): Long = prefs?.getLong("command_done", 0L) ?: 0L
+
+    private fun recomputeStats() {
+        val now = SpryChat.serverNow()
+        val day = now - 86_400_000L
+        val week = now - 7 * 86_400_000L
+        val rows = _allUsers.value
+        val seen = allPresence.mapValues { (_, p) -> p.child("at").getValue(Long::class.java) ?: 0L }
+        val on = allPresence.filterValues { it.child("online").getValue(Boolean::class.java) == true }
+        _stats.value =
+            Stats(
+                users = rows.size + 1,
+                online = rows.count { it.online },
+                hosting = rows.count { it.hosting },
+                activeDay = allPresence.keys.count { on.containsKey(it) || (seen[it] ?: 0) > day },
+                activeWeek = allPresence.keys.count { on.containsKey(it) || (seen[it] ?: 0) > week },
+                banned = rows.count { it.banned },
+                messagesToday = messageTimes.count { it > day },
+                topPlaying =
+                    on.values.mapNotNull { it.child("playing").getValue(String::class.java) }
+                        .groupingBy { it }.eachCount().entries.sortedByDescending { it.value }.take(3).map { it.key to it.value },
+            )
+    }
+
+    private suspend fun adminWrite(updates: Map<String, Any?>, what: String): String? =
+        runCatching { db.reference.updateChildren(updates).await() }
+            .exceptionOrNull()?.let { "Couldn't $what: ${it.message}" }
+
+    suspend fun setMaintenance(on: Boolean, text: String): String? =
+        adminWrite(mapOf("config/maintenance" to mapOf("on" to on, "text" to text.trim().take(300))), "change maintenance")
+
+    /** 0 clears the requirement. */
+    suspend fun setMinVersion(code: Int, url: String): String? =
+        adminWrite(
+            mapOf("config/minVersion" to code.takeIf { it > 0 }, "config/updateUrl" to url.trim().ifEmpty { DEFAULT_UPDATE_URL }),
+            "set the version",
+        )
+
+    suspend fun setFeatured(song: FeaturedSong?): String? =
+        adminWrite(
+            mapOf(
+                "config/featured" to
+                    song?.let { mapOf("videoId" to it.videoId, "title" to it.title, "artist" to it.artist, "thumb" to it.thumb, "at" to ServerValue.TIMESTAMP) },
+            ),
+            "feature it",
+        )
+
+    suspend fun setBadge(row: UserRow, text: String?): String? =
+        adminWrite(mapOf("badges/${row.uid}" to text?.trim()?.take(16)?.ifEmpty { null }), "set the badge")
+
+    suspend fun sendAlert(row: UserRow, text: String): String? {
+        val t = text.trim().take(500).ifEmpty { return "Write something first" }
+        val key = db.getReference("alerts/${row.uid}").push().key ?: return "Couldn't send"
+        return adminWrite(mapOf("alerts/${row.uid}/$key" to mapOf("text" to t, "at" to ServerValue.TIMESTAMP)), "send the alert")
+    }
+
+    /** Makes [row] leave whatever listening session they're in. */
+    suspend fun kick(row: UserRow): String? =
+        adminWrite(mapOf("commands/${row.uid}" to mapOf("type" to "kick", "at" to ServerValue.TIMESTAMP)), "kick")
+
+    /** Starts [song] on each of [targets]' phones. */
+    suspend fun forcePlay(targets: List<UserRow>, song: FeaturedSong): String? {
+        if (targets.isEmpty()) return "Nobody is online"
+        val cmd = mapOf("type" to "play", "videoId" to song.videoId, "at" to ServerValue.TIMESTAMP)
+        return adminWrite(targets.associate { "commands/${it.uid}" to cmd }, "start the song")
+    }
+
+    /** Wipes everything Spry stores about [row]: name, friends, requests, chats, presence, badges. */
+    suspend fun deleteAllData(row: UserRow): String? {
+        if (row.admin) return "Developers can't be wiped"
+        val uid = row.uid
+        val friends = runCatching { db.getReference("friends/$uid").get().await() }.getOrNull()?.children?.mapNotNull { it.key }.orEmpty()
+        val sentTo =
+            runCatching { db.getReference("requests").get().await() }.getOrNull()?.children
+                ?.filter { it.hasChild(uid) }?.mapNotNull { it.key }.orEmpty()
+        val updates = HashMap<String, Any?>()
+        listOf("users", "friends", "requests", "invites", "sessions", "presence", "badges", "alerts", "commands", "vibe")
+            .forEach { updates["$it/$uid"] = null }
+        if (row.username.isNotEmpty()) updates["usernames/${row.username}"] = null
+        friends.forEach { f ->
+            updates["friends/$f/$uid"] = null
+            val chat = SpryChat.chatId(uid, f)
+            updates["chats/$chat"] = null
+            updates["chatAt/$chat"] = null
+        }
+        sentTo.forEach { to -> updates["requests/$to/$uid"] = null }
+        return adminWrite(updates, "delete their data")
+    }
+
+    /** Opens the developer's public room: anyone can join it from Home with one tap. */
+    fun openRoom(service: MusicService) {
+        val me = _user.value?.uid ?: return
+        val name = _username.value.orEmpty()
+        if (!hosting) {
+            val port = ServerSocket(0).use { it.localPort }
+            service.startTogetherHost(port, name, VibeRoomSettings)
+        } else {
+            service.updateTogetherSettings(VibeRoomSettings)
+        }
+        db.getReference("config/room").setValue(mapOf("uid" to me, "title" to "@$name's room"))
+    }
+
+    fun closeRoom(service: MusicService) {
+        db.getReference("config/room").removeValue()
+        service.leaveTogether()
+    }
+
+    /** Anyone: join the developer's public room. */
+    fun joinRoom(service: MusicService) {
+        val room = _config.value.room ?: return
+        val myName = _username.value?.takeIf { it.isNotEmpty() } ?: return
+        scope.launch {
+            val snap = runCatching { db.getReference("sessions/${room.uid}").get().await() }.getOrNull()
+            val sid = snap?.child("sid")?.getValue(String::class.java)
+            val key = snap?.child("key")?.getValue(String::class.java)
+            val link = if (sid != null && key != null) joinLink(Friend(room.uid, room.title, true, HostedSession(sid, key))) else null
+            _vibeStatus.value = if (link == null) "The room isn't open yet" else "listening in ${room.title}"
+            if (link != null) service.joinTogether(link, myName)
+        }
+    }
 
     private val _admins = MutableStateFlow<Set<String>>(emptySet())
     val admins = _admins.asStateFlow()
@@ -486,6 +749,19 @@ object SpryFriends {
             }
         }
         listen(db.getReference("bans/$me")) { _banned.value = it.getValue(String::class.java) }
+        listen(db.getReference("badges")) { s ->
+            _badges.value = s.children.mapNotNull { c -> c.getValue(String::class.java)?.let { c.key!! to it } }.toMap()
+            if (_isAdmin.value) publishAllUsers()
+        }
+        listen(db.getReference("alerts/$me")) { s ->
+            _alerts.value = s.children.mapNotNull { c -> c.child("text").getValue(String::class.java)?.let { Alert(c.key!!, it) } }
+        }
+        listen(db.getReference("commands/$me")) { s ->
+            val type = s.child("type").getValue(String::class.java)
+            val at = s.child("at").getValue(Long::class.java)
+            _command.value =
+                if (type != null && at != null && at > lastHandledCommandAt()) Command(type, at, s.child("videoId").getValue(String::class.java)) else null
+        }
         listen(db.getReference("announcement")) { s ->
             val at = s.child("at").getValue(Long::class.java)
             val text = s.child("text").getValue(String::class.java)
@@ -500,6 +776,9 @@ object SpryFriends {
         _banned.value = null
         _announcement.value = null
         _allUsers.value = emptyList()
+        _badges.value = emptyMap()
+        _alerts.value = emptyList()
+        _command.value = null
     }
 
     private fun startAdminListeners() {
@@ -509,8 +788,13 @@ object SpryFriends {
             publishAllUsers()
         }
         listen(db.getReference("presence"), adminSubs) { s ->
-            allOnline = s.children.associate { it.key!! to (it.child("online").getValue(Boolean::class.java) == true) }
+            allPresence = s.children.associateBy { it.key!! }
+            allOnline = allPresence.mapValues { (_, p) -> p.child("online").getValue(Boolean::class.java) == true }
             publishAllUsers()
+        }
+        listen(db.getReference("chatAt"), adminSubs) { s ->
+            messageTimes = s.children.flatMap { chat -> chat.children.mapNotNull { it.getValue(Long::class.java) } }
+            recomputeStats()
         }
         listen(db.getReference("sessions"), adminSubs) { s ->
             allSessions =
@@ -534,6 +818,7 @@ object SpryFriends {
                 .filter { it != me }
                 .map { uid ->
                     val online = allOnline[uid] == true
+                    val p = allPresence[uid]
                     UserRow(
                         uid = uid,
                         username = allNames[uid].orEmpty(),
@@ -541,8 +826,12 @@ object SpryFriends {
                         hosting = online && uid in allSessions,
                         banned = uid in allBans,
                         admin = uid in _admins.value,
+                        playing = p?.child("playing")?.getValue(String::class.java)?.takeIf { online },
+                        lastSeen = p?.child("at")?.getValue(Long::class.java),
+                        badge = _badges.value[uid],
                     )
-                }.sortedWith(compareByDescending<UserRow> { it.online }.thenBy { it.username.ifEmpty { "~" } })
+                }.sortedWith(compareByDescending<UserRow> { it.online }.thenByDescending { it.lastSeen ?: 0L })
+        recomputeStats()
     }
 
     /** Returns an error message, or null on success. */

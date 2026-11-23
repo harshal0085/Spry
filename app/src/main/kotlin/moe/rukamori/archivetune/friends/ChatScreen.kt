@@ -90,6 +90,7 @@ fun ChatScreen(
     var draft by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     var unsend by remember { mutableStateOf<SpryChat.Message?>(null) }
+    val maintenance = maintenanceActive()
     // re-evaluated every minute so messages that pass 24h while the chat is open disappear too
     var now by remember { mutableStateOf(SpryChat.serverNow()) }
 
@@ -122,7 +123,10 @@ fun ChatScreen(
                 Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = Color.White)
             }
             Column(Modifier.weight(1f)) {
-                Text("@$friendName", fontWeight = FontWeight.SemiBold, color = Color.White)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("@$friendName", fontWeight = FontWeight.SemiBold, color = Color.White)
+                    UserBadges(friendUid, Modifier.padding(start = 6.dp))
+                }
                 Text(
                     "Messages disappear after 24 hours",
                     style = MaterialTheme.typography.bodySmall,
@@ -191,7 +195,7 @@ fun ChatScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(Modifier.weight(1f).padding(vertical = 10.dp)) {
-                if (draft.isEmpty()) Text("Message", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (draft.isEmpty()) Text(if (maintenance) "Chat is paused while Spry updates" else "Message", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 BasicTextField(
                     value = draft,
                     onValueChange = { draft = it.take(1000) },
@@ -202,7 +206,7 @@ fun ChatScreen(
                 )
             }
             IconButton(
-                enabled = draft.isNotBlank(),
+                enabled = draft.isNotBlank() && !maintenance,
                 onClick = {
                     val text = draft
                     draft = ""

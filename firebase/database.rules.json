@@ -4,6 +4,34 @@
       ".read": "auth != null",
       ".write": false
     },
+    "config": {
+      ".read": true,
+      ".write": "auth != null && root.child('admins').child(auth.uid).val() === true"
+    },
+    "badges": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
+        ".validate": "newData.isString() && newData.val().length <= 16"
+      }
+    },
+    "alerts": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && root.child('admins').child(auth.uid).val() === true && !newData.exists()",
+        "$id": {
+          ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true || (auth.uid === $uid && !newData.exists()))",
+          ".validate": "newData.hasChildren(['text', 'at']) && newData.child('text').isString() && newData.child('text').val().length <= 500"
+        }
+      }
+    },
+    "commands": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true || (auth.uid === $uid && !newData.exists()))",
+        ".validate": "newData.hasChildren(['type', 'at']) && newData.child('type').isString()"
+      }
+    },
     "bans": {
       ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",
       "$uid": {
@@ -36,18 +64,22 @@
       }
     },
     "requests": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",
       "$to": {
         ".read": "auth != null && auth.uid === $to",
+        ".write": "auth != null && root.child('admins').child(auth.uid).val() === true && !newData.exists()",
         "$from": {
-          ".write": "auth != null && ((auth.uid === $from && $from !== $to && !root.child('bans').child(auth.uid).exists() && (!newData.exists() || newData.val() === root.child('users').child(auth.uid).child('username').val())) || (auth.uid === $to && !newData.exists()))"
+          ".write": "auth != null && ((auth.uid === $from && $from !== $to && !root.child('bans').child(auth.uid).exists() && root.child('config/maintenance/on').val() !== true && (!newData.exists() || newData.val() === root.child('users').child(auth.uid).child('username').val())) || (auth.uid === $to && !newData.exists()) || (root.child('admins').child(auth.uid).val() === true && !newData.exists()))"
         }
       }
     },
     "friends": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && root.child('admins').child(auth.uid).val() === true && !newData.exists()",
         "$f": {
-          ".write": "auth != null && (auth.uid === $uid || auth.uid === $f) && (!newData.exists() || (auth.uid === $uid && root.child('requests').child($uid).child($f).exists()) || (auth.uid === $f && root.child('requests').child($f).child($uid).exists()))",
+          ".write": "auth != null && (((auth.uid === $uid || auth.uid === $f) && (!newData.exists() || (auth.uid === $uid && root.child('requests').child($uid).child($f).exists()) || (auth.uid === $f && root.child('requests').child($f).child($uid).exists()))) || (root.child('admins').child(auth.uid).val() === true && !newData.exists()))",
           ".validate": "newData.isString()"
         }
       }
@@ -56,49 +88,54 @@
       ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",
       "$uid": {
         ".read": "auth != null && (auth.uid === $uid || root.child('friends').child(auth.uid).child($uid).exists())",
-        ".write": "auth != null && auth.uid === $uid"
+        ".write": "auth != null && (auth.uid === $uid || (root.child('admins').child(auth.uid).val() === true && !newData.exists()))"
       }
     },
     "sessions": {
       ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",
       "$uid": {
-        ".read": "auth != null && (auth.uid === $uid || root.child('friends').child(auth.uid).child($uid).exists())",
-        ".write": "auth != null && auth.uid === $uid"
+        ".read": "auth != null && (auth.uid === $uid || root.child('friends').child(auth.uid).child($uid).exists() || root.child('config/room/uid').val() === $uid)",
+        ".write": "auth != null && (auth.uid === $uid || (root.child('admins').child(auth.uid).val() === true && !newData.exists()))"
       }
     },
     "invites": {
       "$to": {
         ".read": "auth != null && auth.uid === $to",
+        ".write": "auth != null && root.child('admins').child(auth.uid).val() === true && !newData.exists()",
         "$from": {
-          ".write": "auth != null && ((auth.uid === $from && !root.child('bans').child(auth.uid).exists() && root.child('friends').child($to).child($from).exists() && (!newData.exists() || newData.isString())) || (auth.uid === $to && !newData.exists()))"
+          ".write": "auth != null && ((auth.uid === $from && !root.child('bans').child(auth.uid).exists() && root.child('config/maintenance/on').val() !== true && root.child('friends').child($to).child($from).exists() && (!newData.exists() || newData.isString())) || (auth.uid === $to && !newData.exists()))"
         }
       }
     },
     "vibe": {
       "$host": {
         ".read": "auth != null && auth.uid === $host",
+        ".write": "auth != null && root.child('admins').child(auth.uid).val() === true && !newData.exists()",
         "$guest": {
           ".read": "auth != null && auth.uid === $guest",
-          ".write": "auth != null && (auth.uid === $host || (auth.uid === $guest && !root.child('bans').child(auth.uid).exists() && root.child('friends').child($host).child($guest).exists() && (!newData.exists() || newData.child('ok').val() === false)))"
+          ".write": "auth != null && (auth.uid === $host || (auth.uid === $guest && !root.child('bans').child(auth.uid).exists() && root.child('config/maintenance/on').val() !== true && root.child('friends').child($host).child($guest).exists() && (!newData.exists() || newData.child('ok').val() === false)))"
         }
       }
     },
     "chats": {
       "$chat": {
-        ".read": "auth != null && ($chat.beginsWith(auth.uid + '_') || $chat.endsWith('_' + auth.uid)) && query.orderByChild === 'at' && query.startAt >= now - 86400000",
+        ".read": "auth != null && ($chat.beginsWith(auth.uid + '_') || $chat.endsWith('_' + auth.uid))",
+        ".write": "auth != null && root.child('admins').child(auth.uid).val() === true && !newData.exists()",
         ".indexOn": ["at"],
         "$msg": {
-          ".write": "auth != null && ($chat.beginsWith(auth.uid + '_') || $chat.endsWith('_' + auth.uid)) && ((!data.exists() && newData.child('from').val() === auth.uid && !root.child('bans').child(auth.uid).exists() && root.child('friends').child(auth.uid).child($chat.replace(auth.uid, '').replace('_', '')).exists()) || (data.exists() && !newData.exists() && (data.child('from').val() === auth.uid || data.child('at').val() < now - 86400000)) || (!data.exists() && !newData.exists()))",
+          ".write": "auth != null && ($chat.beginsWith(auth.uid + '_') || $chat.endsWith('_' + auth.uid)) && ((!data.exists() && newData.child('from').val() === auth.uid && !root.child('bans').child(auth.uid).exists() && root.child('config/maintenance/on').val() !== true && root.child('friends').child(auth.uid).child($chat.replace(auth.uid, '').replace('_', '')).exists()) || (data.exists() && !newData.exists() && (data.child('from').val() === auth.uid || data.child('at').val() < now - 86400000)) || (!data.exists() && !newData.exists()))",
           ".validate": "newData.hasChildren(['from', 'text', 'at']) && newData.child('text').isString() && newData.child('text').val().length > 0 && newData.child('text').val().length <= 1000 && newData.child('at').val() === now"
         }
       }
     },
     "chatAt": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",
       "$chat": {
         ".read": "auth != null && ($chat.beginsWith(auth.uid + '_') || $chat.endsWith('_' + auth.uid))",
+        ".write": "auth != null && root.child('admins').child(auth.uid).val() === true && !newData.exists()",
         ".indexOn": ".value",
         "$msg": {
-          ".write": "auth != null && ($chat.beginsWith(auth.uid + '_') || $chat.endsWith('_' + auth.uid)) && ((!data.exists() && newData.val() === now && root.child('friends').child(auth.uid).child($chat.replace(auth.uid, '').replace('_', '')).exists()) || (data.exists() && !newData.exists() && (data.val() < now - 86400000 || root.child('chats').child($chat).child($msg).child('from').val() === auth.uid)) || (!data.exists() && !newData.exists()))",
+          ".write": "auth != null && ($chat.beginsWith(auth.uid + '_') || $chat.endsWith('_' + auth.uid)) && ((!data.exists() && newData.val() === now && root.child('config/maintenance/on').val() !== true && root.child('friends').child(auth.uid).child($chat.replace(auth.uid, '').replace('_', '')).exists()) || (data.exists() && !newData.exists() && (data.val() < now - 86400000 || root.child('chats').child($chat).child($msg).child('from').val() === auth.uid)) || (!data.exists() && !newData.exists()))",
           ".validate": "newData.isNumber()"
         }
       }
@@ -109,7 +146,7 @@
         ".write": "auth != null && auth.uid === $host",
         "$conn": {
           ".read": "auth != null && data.child('guest').val() === auth.uid",
-          ".write": "auth != null && (data.exists() ? data.child('guest').val() === auth.uid : newData.child('guest').val() === auth.uid) && !root.child('bans').child(auth.uid).exists() && (root.child('friends').child($host).child(auth.uid).exists() || root.child('admins').child(auth.uid).val() === true)",
+          ".write": "auth != null && (data.exists() ? data.child('guest').val() === auth.uid : newData.child('guest').val() === auth.uid) && !root.child('bans').child(auth.uid).exists() && (root.child('friends').child($host).child(auth.uid).exists() || root.child('admins').child(auth.uid).val() === true || root.child('config/room/uid').val() === $host)",
           "up":   { "$m": { ".validate": "newData.isString() && newData.val().length < 500000" } },
           "down": { "$m": { ".validate": "newData.isString() && newData.val().length < 500000" } }
         }

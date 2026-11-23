@@ -69,7 +69,7 @@ fun FriendsCard(
     val vibeStatus by SpryFriends.vibeStatus.collectAsState()
     val banned by SpryFriends.banned.collectAsState()
     val isAdmin by SpryFriends.isAdmin.collectAsState()
-    val admins by SpryFriends.admins.collectAsState()
+    val maintenance = maintenanceActive()
     var input by remember { mutableStateOf("") }
     var message by remember { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(false) }
@@ -117,6 +117,14 @@ fun FriendsCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 TextButton(onClick = { scope.launch { SpryFriends.signOut(context) } }) { Text("Sign out") }
+            }
+
+            maintenance -> {
+                Text("Spry is being updated", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(
+                    "Friends, chat and listening together are paused for a bit. Your music still plays.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
 
             else -> {
@@ -174,11 +182,23 @@ fun FriendsCard(
                         )
                         Column(Modifier.weight(1f)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("@${f.username}")
-                                if (f.uid in admins) DevBadge(Modifier.padding(start = 6.dp))
+                                Text(
+                                    "@${f.username}",
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f, fill = false),
+                                )
+                                UserBadges(f.uid, Modifier.padding(start = 6.dp))
                             }
                             Text(
-                                text = if (f.online) "Online" else "Offline",
+                                text =
+                                    when {
+                                        f.online && f.playing != null -> "Listening to ${f.playing}"
+                                        f.online -> "Online"
+                                        else -> "Last seen ${agoText(f.lastSeen)}"
+                                    },
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
