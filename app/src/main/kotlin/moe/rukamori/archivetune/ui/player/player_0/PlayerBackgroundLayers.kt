@@ -30,6 +30,7 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
@@ -248,8 +249,15 @@ fun PlayerBackgroundLayers(
             }
         }
 
-        // Spry: the player sits on the song's dominant colour, darkened toward the controls.
+        // Spry: Apple Music-style backdrop, the song's colour under a heavy blur of its own cover.
         moe.rukamori.archivetune.ui.component.SongColorBackground(targetUrl, Modifier.fillMaxSize(), darken = 0.4f)
+        coil3.compose.AsyncImage(
+            model = targetUrl,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize().graphicsLayer { scaleX = 1.6f; scaleY = 1.6f; alpha = 0.85f }
+                .blur(90.dp, androidx.compose.ui.draw.BlurredEdgeTreatment.Rectangle), // no-op below Android 12; the scrim still covers it
+        )
         Box(
             Modifier
                 .fillMaxSize()

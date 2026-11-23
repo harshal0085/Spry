@@ -45,13 +45,14 @@ import moe.rukamori.archivetune.ui.theme.glassStroke
 
 internal object NavBarColors {
     @Composable
-    fun container(pureBlack: Boolean) = if (pureBlack) Color.Black else MaterialTheme.colorScheme.surfaceContainer
+    // Spry: dark liquid glass (smoky near-black) instead of a light surface.
+    fun container(pureBlack: Boolean) = Color(0xFF0E0D12)
 
     @Composable
-    fun iconActive(pureBlack: Boolean) = if (pureBlack) Color.White else MaterialTheme.colorScheme.primary
+    fun iconActive(pureBlack: Boolean) = Color.White
 
     @Composable
-    fun iconInactive(pureBlack: Boolean) = if (pureBlack) Color.White.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurfaceVariant
+    fun iconInactive(pureBlack: Boolean) = Color.White.copy(alpha = 0.55f)
 }
 
 @Composable
@@ -79,7 +80,7 @@ fun FloatingNavigationToolbar(
     val hasOverflow = false
     val containerColor = NavBarColors.container(pureBlack)
 
-    val fixedTintAlpha = if (pureBlack) SettingsDimensions.HazePureBlackTintAlpha else SettingsDimensions.HazeDefaultTintAlpha
+    val fixedTintAlpha = 0.55f
     val hazeStyle = remember(containerColor, blurRadius, pureBlack, blurEnabled) {
         val tintEffect = HazeColorEffect.tint(containerColor.copy(alpha = fixedTintAlpha))
         HazeBlurStyle {
