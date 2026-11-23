@@ -5,6 +5,8 @@
 
 package moe.rukamori.archivetune.ui.component
 
+import android.content.Context
+import android.util.LruCache
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -29,8 +31,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * Fills its space with [url]'s dominant colour mixed toward [ground] by [darken] (0 = pure colour,
- * 1 = ground). Fades when the song changes; shows [ground] until a colour is known.
+ * Fills its space with [url]'s colour mixed toward [ground] by [darken] (0 = pure colour, 1 = ground).
+ * The colour itself is already animated by [rememberSongColor]; animating again here made it lag.
  */
 @Composable
 fun SongColorBackground(
@@ -39,24 +41,36 @@ fun SongColorBackground(
     darken: Float = 0.6f,
     ground: Color = Color(0xFF0B0A10),
 ) {
-    val dominant = rememberSongColor(url, ground)
-    val color by animateColorAsState(lerp(dominant, ground, darken), tween(800), label = "SongColor")
-    Box(modifier.background(color))
+    val song = rememberSongColor(url, ground)
+    Box(modifier.background(lerp(song, ground, darken)))
 }
 
-/** [url]'s dominant colour, animated between songs; [ground] until one is known. */
+/** Toned cover colours by URL, so a song seen before (or prefetched) changes colour instantly. */
+private val songColors = LruCache<String, Color>(200)
+
+/** Works out [url]'s toned colour ahead of time (e.g. for the next song in the queue). */
+suspend fun prefetchSongColor(context: Context, url: String?) {
+    if (url.isNullOrBlank() || songColors.get(url) != null) return
+    computeSongColor(context, url)
+}
+
+private suspend fun computeSongColor(context: Context, url: String): Color? =
+    withContext(Dispatchers.Default) {
+        songColors.get(url)?.let { return@withContext it }
+        val request = ImageRequest.Builder(context).data(url).size(64).allowHardware(false).build()
+        val bitmap = (context.imageLoader.execute(request) as? SuccessResult)?.image?.toBitmap() ?: return@withContext null
+        val c = Palette.from(bitmap).generate().dominantSwatch?.rgb?.let { moe.rukamori.archivetune.ui.theme.spryTone(Color(it)) }
+        c?.also { songColors.put(url, it) }
+    }
+
+/** [url]'s toned colour, animated between songs; [ground] until one is known. */
 @Composable
 fun rememberSongColor(url: String?, ground: Color = Color(0xFF0B0A10)): Color {
     val context = LocalContext.current
     var dominant by remember { mutableStateOf(ground) }
     LaunchedEffect(url) {
         if (url.isNullOrBlank()) return@LaunchedEffect
-        dominant =
-            withContext(Dispatchers.Default) {
-                val request = ImageRequest.Builder(context).data(url).size(128).allowHardware(false).build()
-                val bitmap = (context.imageLoader.execute(request) as? SuccessResult)?.image?.toBitmap() ?: return@withContext null
-                Palette.from(bitmap).generate().dominantSwatch?.rgb?.let { moe.rukamori.archivetune.ui.theme.spryTone(Color(it)) }
-            } ?: return@LaunchedEffect
+        dominant = songColors.get(url) ?: computeSongColor(context, url) ?: return@LaunchedEffect
     }
-    return animateColorAsState(dominant, tween(800), label = "SongDominant").value
+    return animateColorAsState(dominant, tween(450), label = "SongDominant").value
 }

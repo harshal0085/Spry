@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
+import moe.rukamori.archivetune.extensions.metadata
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
@@ -103,6 +104,14 @@ fun ScaffoldShell(
         // Spry: the whole app sits on the playing song's dominant colour.
         val artUrl = playerConnection?.mediaMetadata?.collectAsState()?.value?.thumbnailUrl
         val songColor = moe.rukamori.archivetune.ui.component.rememberSongColor(artUrl)
+        // Work out the next song's colour while this one plays, so skipping recolours instantly.
+        val colorContext = androidx.compose.ui.platform.LocalContext.current
+        androidx.compose.runtime.LaunchedEffect(artUrl, playerConnection) {
+            val player = playerConnection?.player ?: return@LaunchedEffect
+            val next = player.nextMediaItemIndex.takeIf { it != androidx.media3.common.C.INDEX_UNSET } ?: return@LaunchedEffect
+            val nextUrl = player.getMediaItemAt(next).metadata?.thumbnailUrl
+            moe.rukamori.archivetune.ui.component.prefetchSongColor(colorContext, nextUrl)
+        }
         val baseScheme = MaterialTheme.colorScheme
         val songScheme = remember(baseScheme, songColor) { moe.rukamori.archivetune.ui.theme.spryColorScheme(baseScheme, songColor) }
         Box(Modifier.fillMaxSize().background(songScheme.background))
@@ -118,9 +127,7 @@ fun ScaffoldShell(
         )
 
         CompositionLocalProvider(
-            moe.rukamori.archivetune.ui.theme.LocalSongColor provides songColor,
-            moe.rukamori.archivetune.ui.theme.LocalGlassTilt provides moe.rukamori.archivetune.ui.component.rememberGlassTilt(),
-            LocalYumaHaptics provides appState.yumaHaptics,
+            moe.rukamori.archivetune.ui.theme.LocalSongColor provides songColor,            LocalYumaHaptics provides appState.yumaHaptics,
             LocalHapticFeedback provides appState.customHaptic,
             LocalAnimationsDisabled provides disableAnimations,
             // Spry: long text ends in "…" instead of scrolling (scrolling showed words cut mid-way); the player title still scrolls.
