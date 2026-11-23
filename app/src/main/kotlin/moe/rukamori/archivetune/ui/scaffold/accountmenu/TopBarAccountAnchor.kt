@@ -25,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import moe.rukamori.archivetune.R
+import moe.rukamori.archivetune.ui.theme.spryGlass
 import moe.rukamori.archivetune.ui.settings.SettingsDimensions
 import moe.rukamori.archivetune.ui.theme.yumaClickable
 
@@ -62,13 +63,7 @@ internal fun TopBarAccountAnchor(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .size(34.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                    .border(
-                        width = SettingsDimensions.GlassBorderThickness,
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.40f),
-                        shape = CircleShape,
-                    ),
+                    .spryGlass(CircleShape, glints = false),
             )
         }
     }

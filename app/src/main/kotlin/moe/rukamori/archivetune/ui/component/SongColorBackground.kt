@@ -55,7 +55,7 @@ fun rememberSongColor(url: String?, ground: Color = Color(0xFF0B0A10)): Color {
             withContext(Dispatchers.Default) {
                 val request = ImageRequest.Builder(context).data(url).size(128).allowHardware(false).build()
                 val bitmap = (context.imageLoader.execute(request) as? SuccessResult)?.image?.toBitmap() ?: return@withContext null
-                Palette.from(bitmap).generate().dominantSwatch?.rgb?.let { Color(it) }
+                Palette.from(bitmap).generate().dominantSwatch?.rgb?.let { moe.rukamori.archivetune.ui.theme.spryTone(Color(it)) }
             } ?: return@LaunchedEffect
     }
     return animateColorAsState(dominant, tween(800), label = "SongDominant").value

@@ -50,11 +50,7 @@ fun ShortcutCard(
 
     val iconBgColor =
         remember(containerColor, iconColor, isDark) {
-            if (isDark) {
-                iconColor.copy(alpha = 0.16f)
-            } else {
-                iconColor.copy(alpha = 0.10f)
-            }
+            Color.White.copy(alpha = 0.08f)
         }
 
     Box(
@@ -84,7 +80,7 @@ fun ShortcutCard(
                 Icon(
                     painter = painterResource(id = iconRes),
                     contentDescription = null,
-                    tint = iconColor,
+                    tint = Color.White, // Spry: plain white glyphs, no per-card accent colours
                     modifier = Modifier.size(SettingsDimensions.RowIconInnerSize),
                 )
             }

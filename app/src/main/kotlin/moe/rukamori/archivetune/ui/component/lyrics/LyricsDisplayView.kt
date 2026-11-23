@@ -112,7 +112,7 @@ internal fun LyricsDisplayView(
                     textStyle = normalTextStyle,
                     onLineClicked = onPlainLineClicked,
                     onLinePressed = onPlainLinePressed,
-                    modifier = Modifier.fillMaxSize().padding(horizontal = 4.dp),
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 28.dp),
                 )
             }
 
@@ -139,7 +139,7 @@ internal fun LyricsDisplayView(
                             showPhonetic = romanizationPreferences.isEnabled,
                             offset = lyricsViewportOffset,
                             keepAliveZone = 72.dp,
-                            modifier = Modifier.fillMaxSize().padding(horizontal = 4.dp),
+                            modifier = Modifier.fillMaxSize().padding(horizontal = 28.dp),
                         )
                     }
                 }

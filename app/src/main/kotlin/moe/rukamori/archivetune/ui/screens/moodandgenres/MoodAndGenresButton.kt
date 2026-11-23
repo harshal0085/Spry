@@ -1,6 +1,8 @@
 package moe.rukamori.archivetune.ui.screens.moodandgenres
 
 import androidx.compose.foundation.background
+import moe.rukamori.archivetune.ui.theme.spryGlass
+import moe.rukamori.archivetune.ui.theme.spryTone
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -105,7 +107,8 @@ fun MoodAndGenresButton(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .background(cardBrush),
+                    // Spry: glass tinted by the genre's own colour instead of a solid colour block.
+                    .spryGlass(MoodAndGenresButtonShape, tint = spryTone(base), glints = false),
         ) {
             Box(
                 modifier =

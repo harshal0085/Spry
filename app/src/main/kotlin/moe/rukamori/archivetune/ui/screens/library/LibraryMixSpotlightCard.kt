@@ -171,8 +171,8 @@ internal fun MostPlayedAlbumSpotlightCard(
                     shape = CircleShape,
                     colors =
                         ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
                         ),
                     contentPadding = PaddingValues(horizontal = SettingsDimensions.ScreenHorizontalPadding, vertical = 8.dp),
                     modifier = Modifier.height(SettingsDimensions.LibraryChipHeight),

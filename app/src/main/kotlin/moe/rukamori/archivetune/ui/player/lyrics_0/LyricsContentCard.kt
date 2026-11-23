@@ -3,6 +3,7 @@
 package moe.rukamori.archivetune.ui.player.lyrics_0
 
 import androidx.compose.animation.animateColorAsState
+import moe.rukamori.archivetune.ui.theme.spryGlass
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -39,6 +40,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.stringResource
@@ -84,7 +86,22 @@ fun LyricsContentCard(
             isReadyToParse = isReadyToParse,
             isLyricsVisible = isVisible,
             lazyListState = lazyListState,
-            modifier = Modifier.fillMaxSize(),
+            // Spry: lines fade out under the header and before the control slab instead of running behind it.
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer { compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen }
+                .drawWithContent {
+                    drawContent()
+                    drawRect(
+                        androidx.compose.ui.graphics.Brush.verticalGradient(
+                            0f to Color.Transparent,
+                            0.13f to Color.Black,
+                            if (showPlayerControls) 0.64f to Color.Black else 0.9f to Color.Black,
+                            if (showPlayerControls) 0.74f to Color.Transparent else 1f to Color.Transparent,
+                        ),
+                        blendMode = androidx.compose.ui.graphics.BlendMode.DstIn,
+                    )
+                },
         )
 
         if (showPlayerControls) {
@@ -116,15 +133,8 @@ fun LyricsContentCard(
                         scaleY = 0.88f + (0.12f * progress)
                         translationY = 40f * (1f - progress)
                     }
-                    .clip(RoundedCornerShape(32.dp))
-                    .background(animatedAccentColor.copy(alpha = 0.12f))
-                    .glassBorder(
-                        shape = RoundedCornerShape(32.dp),
-                        strokeWidth = SettingsDimensions.GlassBorderThickness,
-                        topAlpha = 0.18f,
-                        bottomAlpha = 0.08f,
-                        baseColor = animatedAccentColor,
-                    )
+                    // Spry: same song-tinted glass slab as the main player.
+                    .spryGlass(RoundedCornerShape(28.dp))
                     .padding(vertical = 12.dp),
                 contentAlignment = Alignment.Center,
             ) {
@@ -183,24 +193,20 @@ fun LyricsContentCard(
                                     if (!state.isLoading) onAction(PlayerAction.PlayPause)
                                 }
                                 .size(68.dp)
-                                .clip(CircleShape)
-                                .drawBehind {
-                                    drawCircle(animatedAccentColor)
-                                }
-                                .padding(0.dp),
+                                .clip(CircleShape),
                             contentAlignment = Alignment.Center,
                         ) {
                             if (state.isLoading) {
                                 CircularWavyProgressIndicator(
                                     modifier = Modifier.size(42.dp),
-                                    color = Color(0xFF121212),
+                                    color = Color.White,
                                 )
                             } else {
                                 Image(
                                     painter = rememberVectorPainter(playPauseIcon),
                                     contentDescription = stringResource(R.string.play_pause),
-                                    modifier = Modifier.size(48.dp),
-                                    colorFilter = ColorFilter.tint(Color(0xFF121212)),
+                                    modifier = Modifier.size(56.dp),
+                                    colorFilter = ColorFilter.tint(Color.White),
                                 )
                             }
                         }

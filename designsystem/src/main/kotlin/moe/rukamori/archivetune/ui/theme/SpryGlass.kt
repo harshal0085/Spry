@@ -21,10 +21,69 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-/** The playing song's dominant colour (animated); Spry's surfaces take their tint from it. */
+/** The playing song's colour, already toned by [spryTone] (animated); Spry's surfaces take their tint from it. */
 val LocalSongColor = compositionLocalOf { Color(0xFF0B0A10) }
 
 private val Ink = Color(0xFF07060A)
+
+private fun Color.toHsl(): FloatArray {
+    val max = maxOf(red, green, blue)
+    val min = minOf(red, green, blue)
+    val l = (max + min) / 2f
+    if (max == min) return floatArrayOf(0f, 0f, l)
+    val d = max - min
+    val s = if (l > 0.5f) d / (2f - max - min) else d / (max + min)
+    val h = when (max) {
+        red -> ((green - blue) / d + (if (green < blue) 6f else 0f))
+        green -> ((blue - red) / d + 2f)
+        else -> ((red - green) / d + 4f)
+    } * 60f
+    return floatArrayOf(h, s, l)
+}
+
+/** HSL colour; h in degrees, s and l in 0..1. */
+fun hsl(h: Float, s: Float, l: Float): Color = Color.hsl(((h % 360f) + 360f) % 360f, s.coerceIn(0f, 1f), l.coerceIn(0f, 1f))
+
+/**
+ * Keeps a cover's hue but makes it usable behind white type: saturation capped, lightness clamped.
+ * A near-white cover becomes a warm charcoal, a neon one a deep jewel tone.
+ */
+fun spryTone(c: Color): Color {
+    val (h, s, l) = c.toHsl()
+    return hsl(h, minOf(s, 0.55f), l.coerceIn(0.14f, 0.28f))
+}
+
+/** Dark app palette whose surfaces carry [song]'s hue (song should already be [spryTone]d). */
+fun spryColorScheme(base: androidx.compose.material3.ColorScheme, song: Color): androidx.compose.material3.ColorScheme {
+    val (h, s0) = song.toHsl()
+    val s = s0 * 0.45f
+    fun ink(l: Float) = hsl(h, s, l)
+    val soft = Color(0xFFDCD8E4)
+    return base.copy(
+        primaryContainer = ink(0.2f),
+        onPrimaryContainer = Color.White,
+        secondary = Color(0xFFB2AEBC),
+        onSecondary = Ink,
+        secondaryContainer = ink(0.18f),
+        onSecondaryContainer = Color.White,
+        tertiary = soft,
+        tertiaryContainer = ink(0.16f),
+        onTertiaryContainer = Color.White,
+        background = ink(0.075f),
+        surface = ink(0.075f),
+        surfaceVariant = ink(0.14f),
+        surfaceTint = Color.Transparent,
+        outline = ink(0.3f),
+        outlineVariant = ink(0.17f),
+        surfaceBright = ink(0.2f),
+        surfaceDim = ink(0.045f),
+        surfaceContainerLowest = ink(0.045f),
+        surfaceContainerLow = ink(0.08f),
+        surfaceContainer = ink(0.1f),
+        surfaceContainerHigh = ink(0.125f),
+        surfaceContainerHighest = ink(0.155f),
+    )
+}
 
 /**
  * Dark glass slab: smoky fill tinted by [tint], a diagonal sheen, a light-catching rim

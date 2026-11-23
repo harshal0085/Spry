@@ -117,20 +117,17 @@ private fun LibraryFilterChipItem(
     onClick: () -> Unit,
 ) {
     val yumaColors = LocalYumaColors.current
+    // Spry: selected chip = brighter glass + white label; the rest = plain glass + grey label.
     val backgroundColor = if (selected) {
-        MaterialTheme.colorScheme.primaryContainer
+        Color.White.copy(alpha = 0.22f)
     } else {
         yumaColors.glassBackground
     }
-    val borderColor = if (selected) {
-        Color.Transparent
-    } else {
-        yumaColors.glassBorder
-    }
+    val borderColor = yumaColors.glassBorder
     val contentColor = if (selected) {
-        MaterialTheme.colorScheme.onPrimaryContainer
+        Color.White
     } else {
-        MaterialTheme.colorScheme.onSurface
+        MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     Row(

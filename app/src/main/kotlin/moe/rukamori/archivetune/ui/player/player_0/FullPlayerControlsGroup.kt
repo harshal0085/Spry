@@ -224,17 +224,19 @@ internal fun FullPlayerControlsGroup(
                             translationY = p * metadataShiftPx
                         }
                 ) {
-                    PlayerMetadata(
-                        title = state.title,
-                        artist = state.artist,
-                        state = state,
-                        onAction = onAction,
-                        onMoreClick = { onOpenSettingsMenu(PlayerMenuScreen.SETTINGS) },
-                        isVisible = isVisible,
-                        enabled = isMainControlsInteractive,
-                        likeFractionProvider = queueFractionProvider,
-                        likeEnabled = isLikeInteractive,
-                    )
+                    androidx.compose.runtime.CompositionLocalProvider(moe.rukamori.archivetune.LocalMarqueeEnabled provides true) {
+                        PlayerMetadata(
+                            title = state.title,
+                            artist = state.artist,
+                            state = state,
+                            onAction = onAction,
+                            onMoreClick = { onOpenSettingsMenu(PlayerMenuScreen.SETTINGS) },
+                            isVisible = isVisible,
+                            enabled = isMainControlsInteractive,
+                            likeFractionProvider = queueFractionProvider,
+                            likeEnabled = isLikeInteractive,
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(FullPlayerControlsDefaults.MetadataToSeekbarGap))

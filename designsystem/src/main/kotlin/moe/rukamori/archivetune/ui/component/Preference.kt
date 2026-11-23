@@ -131,13 +131,8 @@ private val PreferenceEntryVerticalPadding = SettingsDimensions.RowVerticalPaddi
 
 @Composable
 fun rememberPreferenceIconShape(key: Any? = LocalPreferenceItemIndex.current): Shape {
-    val seed = kotlin.math.abs(key?.hashCode() ?: 0)
-    return when (seed % 4) {
-        0 -> MaterialShapes.Ghostish.toShape()
-        1 -> MaterialShapes.Clover4Leaf.toShape()
-        2 -> MaterialShapes.Cookie9Sided.toShape()
-        else -> MaterialShapes.Pill.toShape()
-    }
+    // Spry: one calm shape for every settings icon instead of Yuma's random blobs.
+    return RoundedCornerShape(12.dp)
 }
 
 private fun segmentedPreferenceItemShape(

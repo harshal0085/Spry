@@ -255,7 +255,7 @@ fun PlayerBackgroundLayers(
             model = targetUrl,
             contentDescription = null,
             contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize().graphicsLayer { scaleX = 1.6f; scaleY = 1.6f; alpha = 0.85f }
+            modifier = Modifier.fillMaxSize().graphicsLayer { scaleX = 1.6f; scaleY = 1.6f; alpha = 0.55f }
                 .blur(90.dp, androidx.compose.ui.draw.BlurredEdgeTreatment.Rectangle), // no-op below Android 12; the scrim still covers it
         )
         Box(
@@ -264,9 +264,9 @@ fun PlayerBackgroundLayers(
                 .drawBehind {
                     drawRect(
                         Brush.verticalGradient(
-                            0f to Color(0x33000000),
-                            0.5f to Color(0x66000000),
-                            1f to Color(0xD9000000),
+                            0f to Color(0x59000000),
+                            0.5f to Color(0x8C000000),
+                            1f to Color(0xE6000000),
                         ),
                     )
                 },

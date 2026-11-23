@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import moe.rukamori.archivetune.ui.theme.spryGlass
 
 internal object CapsuleDefaults {
     val Shape: Shape = RoundedCornerShape(24.dp)
@@ -52,7 +53,6 @@ internal fun OverlayCapsuleShell(
     progressProvider: (() -> Float)? = null,
     content: @Composable BoxScope.() -> Unit,
 ) {
-    val capsuleColor = if (isBlurBackgroundEnabled) Color.Black else Color(darkMutedColor)
     val topPadding = CapsuleDefaults.topPadding()
 
     Box(
@@ -72,16 +72,9 @@ internal fun OverlayCapsuleShell(
                     Modifier
                 }
             )
-            .background(capsuleColor, CapsuleDefaults.Shape)
+            // Spry: the lyrics/queue header is the same song-tinted dark glass as every other panel.
+            .spryGlass(CapsuleDefaults.Shape)
     ) {
         content()
-
-        if (isBlurBackgroundEnabled) {
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .border(BorderStroke(1.dp, Color(0x22FFFFFF)), CapsuleDefaults.Shape)
-            )
-        }
     }
 }

@@ -51,6 +51,7 @@ import moe.rukamori.archivetune.ui.settings.SettingsAnimations
 import moe.rukamori.archivetune.ui.settings.SettingsDimensions
 import moe.rukamori.archivetune.ui.theme.LocalYumaColors
 import moe.rukamori.archivetune.ui.theme.yumaGlassCard
+import moe.rukamori.archivetune.ui.theme.spryGlass
 import moe.rukamori.archivetune.ui.theme.yumaSegmentPosition
 
 @Composable
@@ -83,7 +84,7 @@ fun SettingsRow(
                 modifier = Modifier
                     .size(SettingsDimensions.RowIconSize)
                     .clip(iconShape)
-                    .background(color = effectiveAccent.copy(alpha = SettingsDimensions.RowIconBgAlpha), shape = iconShape),
+                    .background(color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.08f), shape = iconShape),
                 contentAlignment = Alignment.Center,
             ) {
                 val iconModifier = Modifier.size(SettingsDimensions.RowIconInnerSize)
@@ -91,10 +92,10 @@ fun SettingsRow(
                     BadgedBox(
                         badge = { Badge(containerColor = MaterialTheme.colorScheme.error, modifier = Modifier.size(SettingsDimensions.BadgeSize)) },
                     ) {
-                        Icon(painter = item.icon, contentDescription = null, tint = effectiveAccent, modifier = iconModifier)
+                        Icon(painter = item.icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = iconModifier)
                     }
                 } else {
-                    Icon(painter = item.icon, contentDescription = null, tint = effectiveAccent, modifier = iconModifier)
+                    Icon(painter = item.icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = iconModifier)
                 }
             }
 
@@ -179,8 +180,8 @@ fun SettingsSegmentedItem(
     modifier: Modifier = Modifier,
 ) {
     val effectiveAccent = if (item.accentColor.isSpecified) item.accentColor else MaterialTheme.colorScheme.primary
-    val iconContentCandidate = contentColorFor(effectiveAccent)
-    val iconContentColor = if (iconContentCandidate.isSpecified) iconContentCandidate else MaterialTheme.colorScheme.surface
+    // Spry: plain white glyph on a faint glass tile; no coloured blobs.
+    val iconContentColor = MaterialTheme.colorScheme.onSurface
     val shape = remember(index, count) { segmentedSettingsItemShape(index, count) }
     val position = remember(index, count) { yumaSegmentPosition(index, count) }
     val interactionSource = remember { MutableInteractionSource() }
@@ -196,8 +197,7 @@ fun SettingsSegmentedItem(
         modifier = modifier
             .fillMaxWidth()
             .graphicsLayer { scaleX = scale; scaleY = scale }
-            .yumaGlassCard(shape = shape, backgroundColor = colors.glassBackground, borderColor = colors.glassBorder, position = position)
-            .clip(shape)
+            .spryGlass(shape, glints = index == 0)
             .focusable()
             .clickable(interactionSource = interactionSource, indication = null, onClick = item.onClick),
     ) {
@@ -213,7 +213,7 @@ fun SettingsSegmentedItem(
                 modifier = Modifier
                     .size(SettingsDimensions.SegmentedIconBoxSize)
                     .clip(iconShape)
-                    .background(effectiveAccent),
+                    .background(androidx.compose.ui.graphics.Color.White.copy(alpha = 0.08f)),
                 contentAlignment = Alignment.Center,
             ) {
                 val iconModifier = Modifier.size(SettingsDimensions.SegmentedIconSize)

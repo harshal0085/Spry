@@ -14,6 +14,7 @@ import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
@@ -102,7 +103,9 @@ fun ScaffoldShell(
         // Spry: the whole app sits on the playing song's dominant colour.
         val artUrl = playerConnection?.mediaMetadata?.collectAsState()?.value?.thumbnailUrl
         val songColor = moe.rukamori.archivetune.ui.component.rememberSongColor(artUrl)
-        Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.lerp(songColor, Color(0xFF0B0A10), 0.68f)))
+        val baseScheme = MaterialTheme.colorScheme
+        val songScheme = remember(baseScheme, songColor) { moe.rukamori.archivetune.ui.theme.spryColorScheme(baseScheme, songColor) }
+        Box(Modifier.fillMaxSize().background(songScheme.background))
         val appState = rememberScaffoldAppState(
             activity = activity,
             navController = navController,
@@ -119,7 +122,8 @@ fun ScaffoldShell(
             LocalYumaHaptics provides appState.yumaHaptics,
             LocalHapticFeedback provides appState.customHaptic,
             LocalAnimationsDisabled provides disableAnimations,
-            LocalMarqueeEnabled provides marqueeEnabled,
+            // Spry: long text ends in "…" instead of scrolling (scrolling showed words cut mid-way); the player title still scrolls.
+            LocalMarqueeEnabled provides false,
             LocalHomeBackgroundStyle provides HomeBackgroundSettings(homeBackgroundStyle, homeBackgroundParallaxEnabled, homeBackgroundParallaxStrength, homeBackgroundBrightness),
             LocalDatabase provides database,
             LocalContentColor provides if (pureBlack) Color.White else contentColorFor(MaterialTheme.colorScheme.surface),
@@ -133,6 +137,8 @@ fun ScaffoldShell(
             LocalGlobalVisibility provides isHomeScreenVisible,
             LocalPlayerIsExpanded provides appState.playerBottomSheetState.isExpanded,
         ) {
+          // Spry: every surface in the app carries the playing song's hue.
+          MaterialTheme(colorScheme = songScheme) {
             ScreenBackground(
                 isVisible = LocalGlobalVisibility.current && contentVisible,
                 modifier = Modifier.fillMaxSize(),
@@ -240,6 +246,7 @@ fun ScaffoldShell(
                     }
                 }
             }
+          }
         }
     }
 }

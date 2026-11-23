@@ -402,8 +402,12 @@ fun PlaylistThumbnail(
     }
 }
 
+private const val SpryNoCoverOverlays = true
+
 @Composable
 fun BoxScope.OverlayPlayButton(visible: Boolean) {
+    // Spry: nothing is drawn over cover art; tapping the card already plays it.
+    if (SpryNoCoverOverlays) return
     AnimatedVisibility(
         visible = visible,
         enter = fadeIn(),

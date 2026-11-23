@@ -117,26 +117,13 @@ fun Modifier.pseudoGlass(
     shape: Shape = RoundedCornerShape(SettingsDimensions.GlassCornerRadius),
     pseudoBlur: PseudoBlur = PseudoBlur.default(),
 ): Modifier {
-    val specularBrush = remember {
-        Brush.verticalGradient(
-            0.0f to Color.White.copy(alpha = 0.06f),
-            0.4f to Color.Transparent,
-            1.0f to Color.Black.copy(alpha = 0.04f)
-        )
-    }
-
+    // Spry: every Yuma glass card is Spry's song-tinted dark glass. A caller's own fill
+    // (a selected chip, an accent card) is kept on top so states still read.
+    val defaultFill = LocalYumaColors.current.glassBackground
+    val custom = pseudoBlur.backgroundColor.takeIf { it != defaultFill }
     return this
-        .clip(shape)
-        .background(pseudoBlur.backgroundColor, shape)
-        .background(specularBrush, shape)
-        .glassStroke(
-            shape = shape,
-            strokeWidth = pseudoBlur.strokeWidth,
-            topAlpha = pseudoBlur.topAlpha,
-            bottomAlpha = pseudoBlur.bottomAlpha,
-            topColor = pseudoBlur.borderColor,
-            bottomColor = pseudoBlur.shadowColor
-        )
+        .spryGlass(shape, glints = false)
+        .then(if (custom != null) Modifier.background(custom.copy(alpha = custom.alpha * 0.6f), shape) else Modifier)
 }
 
 @Composable

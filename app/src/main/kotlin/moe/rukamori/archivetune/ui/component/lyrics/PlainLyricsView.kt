@@ -59,7 +59,7 @@ internal fun PlainLyricsView(
         remember {
             PaddingValues(
                 top = 120.dp,
-                bottom = 96.dp,
+                bottom = 260.dp,
             )
         }
 

@@ -37,6 +37,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import moe.rukamori.archivetune.R
+import moe.rukamori.archivetune.ui.theme.spryGlass
 import moe.rukamori.archivetune.search.SearchDiscoveryUiModel
 import moe.rukamori.archivetune.ui.screens.moodandgenres.MoodAndGenresButton
 import moe.rukamori.archivetune.ui.screens.moodandgenres.MoodAndGenresButtonHeight
@@ -85,7 +86,11 @@ internal fun SearchEntryField(
             if (expanded) onClick()
         },
         windowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp),
-        modifier = modifier.fillMaxWidth(),
+        // Spry: the search field is a glass pill like the rest of the app.
+        colors = SearchBarDefaults.colors(containerColor = Color.Transparent),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp,
+        modifier = modifier.fillMaxWidth().spryGlass(androidx.compose.foundation.shape.RoundedCornerShape(50)),
     ) {}
 }
 @OptIn(ExperimentalMaterial3Api::class)
@@ -100,6 +105,7 @@ internal fun SearchDiscoveryTabs(
         selectedTabIndex = tabs.indexOf(selectedTab),
         modifier = modifier,
         containerColor = Color.Transparent,
+        divider = {},
     ) {
         tabs.forEach { tab ->
             Tab(
