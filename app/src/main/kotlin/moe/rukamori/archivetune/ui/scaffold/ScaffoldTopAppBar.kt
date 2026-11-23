@@ -170,7 +170,7 @@ fun ScaffoldTopAppBar(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Icon(
-                        painter = painterResource(R.drawable.about_appbar),
+                        painter = painterResource(R.drawable.spry_icon_fg),
                         contentDescription = null,
                         modifier = Modifier
                             .size(35.dp)

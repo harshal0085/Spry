@@ -22,6 +22,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import moe.rukamori.archivetune.ui.theme.LocalSongColor
+import moe.rukamori.archivetune.ui.theme.spryGlass
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
@@ -154,20 +156,8 @@ fun FloatingNavigationToolbar(
                     Modifier.background(containerColor)
                 },
             )
-            .then(
-                if (showBorder) {
-                    Modifier.glassStroke(
-                        shape = capsuleShape,
-                        strokeWidth = SettingsDimensions.GlassBorderThickness,
-                        topAlpha = SettingsDimensions.GlassBorderTopAlpha,
-                        bottomAlpha = SettingsDimensions.GlassBorderBottomAlpha,
-                        topColor = Color.White,
-                        bottomColor = Color.Black,
-                    )
-                } else {
-                    Modifier
-                },
-            ),
+            // Spry: song-tinted glass rim + glints over the blur (glass fill is transparent so the blur shows).
+            .spryGlass(shape = capsuleShape, tint = LocalSongColor.current, fillAlpha = 0.45f),
         contentAlignment = Alignment.Center,
     ) {
         Box(

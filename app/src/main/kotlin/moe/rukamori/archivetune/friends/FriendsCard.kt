@@ -6,6 +6,7 @@
 package moe.rukamori.archivetune.friends
 
 import android.app.Activity
+import moe.rukamori.archivetune.ui.theme.spryGlass
 import android.content.Context
 import android.content.ContextWrapper
 import androidx.compose.foundation.background
@@ -238,8 +239,15 @@ fun OnlineFriendsStrip(
     var note by remember { mutableStateOf<String?>(null) }
     if (user == null) return
     val online = friends.filter { it.online }
+    // Spry: nothing to act on → take no space on Home.
+    if (online.isEmpty() && requests.isEmpty() && status == null && note == null) return
 
-    Column(modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Column(
+        modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
+            .spryGlass(androidx.compose.foundation.shape.RoundedCornerShape(24.dp))
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = if (online.isEmpty()) "Online" else "Online · ${online.size}",
@@ -256,9 +264,6 @@ fun OnlineFriendsStrip(
                 TextButton(onClick = { scope.launch { SpryFriends.accept(p) } }) { Text("Accept") }
                 TextButton(onClick = { scope.launch { SpryFriends.decline(p) } }) { Text("No") }
             }
-        }
-        if (online.isEmpty()) {
-            Text("Nobody's online right now.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         online.forEach { f ->
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {

@@ -101,7 +101,8 @@ fun ScaffoldShell(
     ) {
         // Spry: the whole app sits on the playing song's dominant colour.
         val artUrl = playerConnection?.mediaMetadata?.collectAsState()?.value?.thumbnailUrl
-        moe.rukamori.archivetune.ui.component.SongColorBackground(artUrl, Modifier.fillMaxSize(), darken = 0.68f)
+        val songColor = moe.rukamori.archivetune.ui.component.rememberSongColor(artUrl)
+        Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.lerp(songColor, Color(0xFF0B0A10), 0.68f)))
         val appState = rememberScaffoldAppState(
             activity = activity,
             navController = navController,
@@ -114,6 +115,7 @@ fun ScaffoldShell(
         )
 
         CompositionLocalProvider(
+            moe.rukamori.archivetune.ui.theme.LocalSongColor provides songColor,
             LocalYumaHaptics provides appState.yumaHaptics,
             LocalHapticFeedback provides appState.customHaptic,
             LocalAnimationsDisabled provides disableAnimations,

@@ -7,6 +7,7 @@
 package moe.rukamori.archivetune.ui.player.player_0
 
 import android.annotation.SuppressLint
+import moe.rukamori.archivetune.ui.theme.spryGlass
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -210,6 +211,9 @@ internal fun FullPlayerControlsGroup(
                             (1f - (q - 0.45f) / 0.13f).coerceIn(0f, 1f)
                         }
                     }
+                    // Spry: title, seek bar and transport sit on one dark glass slab tinted by the cover.
+                    .spryGlass()
+                    .padding(horizontal = 18.dp, vertical = 16.dp)
             ) {
                 Column(
                     modifier = Modifier

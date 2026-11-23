@@ -47,13 +47,10 @@ internal fun rememberMiniHazeStyle(
     blurRadius: Float,
     gradientColor: Int = 0,
 ): HazeBlurStyle {
-    val defaultContainer = MaterialTheme.colorScheme.surfaceContainer
-    val tintColor = remember(pureBlack, gradientColor, defaultContainer) {
-        if (pureBlack) Color.Black
-        else if (gradientColor != 0) Color(gradientColor)
-        else defaultContainer
-    }
-    val fixedTintAlpha = if (pureBlack) SettingsDimensions.HazePureBlackTintAlpha else SettingsDimensions.HazeDefaultTintAlpha
+    // Spry: dark glass tinted by the playing song.
+    val tintColor = androidx.compose.ui.graphics.lerp(moe.rukamori.archivetune.ui.theme.LocalSongColor.current, Color(0xFF07060A), 0.7f)
+    val defaultContainer = tintColor
+    val fixedTintAlpha = 0.6f
 
     return remember(tintColor, blurRadius, pureBlack, defaultContainer) {
         val tintEffect = HazeColorEffect.tint(tintColor.copy(alpha = fixedTintAlpha))
@@ -69,10 +66,8 @@ internal fun rememberMiniHazeStyle(
 
 @Composable
 internal fun rememberBackgroundGradient(gradientColor: Int): Brush {
-    val defaultContainer = MaterialTheme.colorScheme.surfaceContainer
-    val color = remember(gradientColor, defaultContainer) {
-        if (gradientColor != 0) Color(gradientColor) else defaultContainer
-    }
+    val color = androidx.compose.ui.graphics.lerp(moe.rukamori.archivetune.ui.theme.LocalSongColor.current, Color(0xFF07060A), 0.7f)
+        .copy(alpha = 0.7f)
 
     return remember(color) {
         Brush.verticalGradient(
@@ -127,9 +122,14 @@ internal fun Modifier.playerSheetGlassBorder(
 ): Modifier = this.drawWithCache {
     val strokeWidthPx = SettingsDimensions.GlassBorderThickness.toPx()
     val halfStroke = strokeWidthPx / 2f
-    val borderBrush = Brush.verticalGradient(
-        0.0f to Color.White.copy(alpha = SettingsDimensions.GlassBorderTopAlpha),
-        1.0f to Color.Black.copy(alpha = SettingsDimensions.GlassBorderBottomAlpha)
+    // Spry: light-catching rim like the nav bar (bright top-left, fading, catching again bottom-right).
+    val borderBrush = Brush.linearGradient(
+        0f to Color.White.copy(alpha = 0.55f),
+        0.35f to Color.White.copy(alpha = 0.10f),
+        0.7f to Color.White.copy(alpha = 0.06f),
+        1f to Color.White.copy(alpha = 0.32f),
+        start = Offset.Zero,
+        end = Offset(size.width, size.height),
     )
 
     onDrawWithContent {

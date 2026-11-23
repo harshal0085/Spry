@@ -39,6 +39,14 @@ fun SongColorBackground(
     darken: Float = 0.6f,
     ground: Color = Color(0xFF0B0A10),
 ) {
+    val dominant = rememberSongColor(url, ground)
+    val color by animateColorAsState(lerp(dominant, ground, darken), tween(800), label = "SongColor")
+    Box(modifier.background(color))
+}
+
+/** [url]'s dominant colour, animated between songs; [ground] until one is known. */
+@Composable
+fun rememberSongColor(url: String?, ground: Color = Color(0xFF0B0A10)): Color {
     val context = LocalContext.current
     var dominant by remember { mutableStateOf(ground) }
     LaunchedEffect(url) {
@@ -50,6 +58,5 @@ fun SongColorBackground(
                 Palette.from(bitmap).generate().dominantSwatch?.rgb?.let { Color(it) }
             } ?: return@LaunchedEffect
     }
-    val color by animateColorAsState(lerp(dominant, ground, darken), tween(800), label = "SongColor")
-    Box(modifier.background(color))
+    return animateColorAsState(dominant, tween(800), label = "SongDominant").value
 }
