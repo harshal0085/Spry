@@ -9,6 +9,7 @@ import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -127,7 +128,15 @@ fun rememberScaffoldAppState(
     val currentRoute = navBackStackEntry?.destination?.route
     val isYearInMusicScreen = currentRoute?.startsWith("year_in_music") == true
 
-    val navigationItems = remember(isTvDevice) { if (isTvDevice) Screens.TvMainScreens else Screens.MainScreens }
+    // Spry: developers get a Dev tab after Library
+    val isAdmin by moe.rukamori.archivetune.friends.SpryFriends.isAdmin.collectAsState()
+    val navigationItems = remember(isTvDevice, isAdmin) {
+        when {
+            isTvDevice -> Screens.TvMainScreens
+            isAdmin -> Screens.AdminScreens
+            else -> Screens.MainScreens
+        }
+    }
     val defaultOpenTab by rememberEnumPreference(DefaultOpenTabKey, NavigationTab.HOME)
     val blurNavBar by rememberPreference(BlurNavBarKey, defaultValue = true)
     val blurRadius by rememberPreference(BlurRadiusKey, defaultValue = SettingsDimensions.BlurRadiusDefault)
@@ -152,7 +161,7 @@ fun rememberScaffoldAppState(
             navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route } && !searchState.active
     }
     val shouldShowTopBar = !searchState.active && currentRoute in topLevelScreens && currentRoute != "settings" &&
-        currentRoute != Screens.Friends.route // the Friends tab draws its own large title
+        currentRoute != Screens.Friends.route && currentRoute != Screens.Dev.route // these tabs draw their own large title
 
     val allLocalItems by homeViewModel.allLocalItems.collectAsStateWithLifecycle()
     val allYtItems by homeViewModel.allYtItems.collectAsStateWithLifecycle()

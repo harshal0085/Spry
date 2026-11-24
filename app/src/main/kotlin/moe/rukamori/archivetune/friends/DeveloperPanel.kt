@@ -132,10 +132,6 @@ fun DeveloperPanel(modifier: Modifier = Modifier) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Developer", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            DevBadge(Modifier.padding(start = 8.dp))
-        }
 
         // ---- stats
         Section("Spry right now")

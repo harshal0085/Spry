@@ -108,6 +108,9 @@ internal fun NavGraphBuilder.settingsNavigationRoutes(
     composable("friends") {
         moe.rukamori.archivetune.friends.FriendsScreen(navController)
     }
+    composable("dev") {
+        moe.rukamori.archivetune.friends.DevScreen()
+    }
     composable("chat/{uid}/{name}") { entry ->
         moe.rukamori.archivetune.friends.ChatScreen(
             navController = navController,

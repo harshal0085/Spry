@@ -448,7 +448,7 @@ internal fun MusicService.joinTogether(
                                 scope.launch(SilentHandler) {
                                     togetherSessionState.value =
                                         moe.rukamori.archivetune.together.TogetherSessionState.Error(
-                                            message = getString(R.string.not_allowed),
+                                            message = getString(R.string.spry_listening_along),
                                             recoverable = true,
                                         )
                                 }
@@ -708,7 +708,7 @@ internal fun MusicService.joinTogetherOnline(
                                 scope.launch(SilentHandler) {
                                     togetherSessionState.value =
                                         moe.rukamori.archivetune.together.TogetherSessionState.Error(
-                                            message = getString(R.string.not_allowed),
+                                            message = getString(R.string.spry_listening_along),
                                             recoverable = true,
                                         )
                                 }
@@ -911,7 +911,7 @@ internal fun MusicService.requestTogetherControl(action: moe.rukamori.archivetun
     if (state.role !is moe.rukamori.archivetune.together.TogetherRole.Guest) return
     if (!state.roomState.settings.allowGuestsToControlPlayback) {
         Timber.tag("Together").i("control blocked locally (disabled) action=${action::class.java.simpleName}")
-        showTogetherNotice(getString(R.string.not_allowed), key = "GUEST_CONTROL_DISABLED_LOCAL")
+        showTogetherNotice(getString(R.string.spry_listening_along), key = "GUEST_CONTROL_DISABLED_LOCAL")
         return
     }
     val now = android.os.SystemClock.elapsedRealtime()
@@ -965,7 +965,7 @@ internal fun MusicService.requestTogetherAddTrack(
     if (state.role !is moe.rukamori.archivetune.together.TogetherRole.Guest) return
     if (!state.roomState.settings.allowGuestsToAddTracks) {
         Timber.tag("Together").i("add blocked locally (disabled) mode=$mode trackId=${track.id}")
-        showTogetherNotice(getString(R.string.not_allowed), key = "GUEST_ADD_DISABLED_LOCAL")
+        showTogetherNotice(getString(R.string.spry_listening_along), key = "GUEST_ADD_DISABLED_LOCAL")
         return
     }
     client.requestAddTrack(state.sessionId, track, mode)

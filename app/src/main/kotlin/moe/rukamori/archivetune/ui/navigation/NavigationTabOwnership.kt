@@ -9,6 +9,7 @@ internal fun findTabForRoute(route: String?): Screens? {
         route == Screens.Search.route -> Screens.Search
         route == Screens.Friends.route || route.startsWith("chat/") -> Screens.Friends
         route == Screens.Library.route -> Screens.Library
+        route == Screens.Dev.route -> Screens.Dev
 
         // Library sub-routes (e.g. Cache playlist, local library screens)
         route == "local_songs" ||

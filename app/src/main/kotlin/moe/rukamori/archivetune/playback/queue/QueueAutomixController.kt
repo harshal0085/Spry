@@ -117,7 +117,7 @@ internal class QueueAutomixController(
                 )
         ) {
             is GuestRadioGateDecision.Denied -> {
-                delegate.showTogetherNotice(delegate.getString(R.string.not_allowed), key = decision.noticeKey)
+                delegate.showTogetherNotice(delegate.getString(R.string.spry_listening_along), key = decision.noticeKey)
                 return
             }
 

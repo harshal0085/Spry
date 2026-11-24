@@ -6,6 +6,7 @@
 
 package moe.rukamori.archivetune.innertube.browse
 
+import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
 import io.ktor.client.request.parameter
@@ -27,6 +28,18 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 
 @OptIn(ExperimentalEncodingApi::class)
 internal class InnerTubeBrowse(private val http: InnerTubeHttp) {
+    /**
+     * Spry: a stale YouTube sign-in makes every logged-in request fail with 401, which left the queue
+     * at one song (next did nothing, playback stopped at the end). Retry once without the login.
+     */
+    private suspend fun withLoginFallback(login: Boolean, request: suspend (login: Boolean) -> HttpResponse): HttpResponse =
+        try {
+            request(login)
+        } catch (e: ClientRequestException) {
+            if (!login || e.response.status.value != 401) throw e
+            request(false)
+        }
+
     suspend fun search(
         client: YouTubeClient,
         query: String? = null,
@@ -72,12 +85,12 @@ internal class InnerTubeBrowse(private val http: InnerTubeHttp) {
         authState: PlaybackAuthState,
         locale: YouTubeLocale,
         useLoginForBrowse: Boolean,
-    ): HttpResponse = http.withRetry {
+    ): HttpResponse = withLoginFallback(setLogin || useLoginForBrowse) { login -> http.withRetry {
         http.client.post("browse") {
             with(http) {
                 ytClient(
                     client = client,
-                    setLogin = setLogin || useLoginForBrowse,
+                    setLogin = login,
                     authState = authState,
                 )
             }
@@ -87,7 +100,7 @@ internal class InnerTubeBrowse(private val http: InnerTubeHttp) {
                         client.toContext(
                             locale,
                             authState.visitorData,
-                            if (setLogin || useLoginForBrowse) authState.dataSyncId else null,
+                            if (login) authState.dataSyncId else null,
                         ),
                     browseId = browseId,
                     params = params,
@@ -95,7 +108,7 @@ internal class InnerTubeBrowse(private val http: InnerTubeHttp) {
                 ),
             )
         }
-    }
+    } }
 
     suspend fun next(
         client: YouTubeClient,
@@ -107,14 +120,14 @@ internal class InnerTubeBrowse(private val http: InnerTubeHttp) {
         continuation: String? = null,
         authState: PlaybackAuthState,
         queueLocale: YouTubeLocale,
-    ): HttpResponse = http.withRetry {
+    ): HttpResponse = withLoginFallback(true) { login -> http.withRetry {
         http.client.post("next") {
             with(http) {
-                ytClient(client, setLogin = true, authState = authState)
+                ytClient(client, setLogin = login, authState = authState)
             }
             setBody(
                 NextBody(
-                    context = client.toContext(queueLocale, authState.visitorData, authState.dataSyncId),
+                    context = client.toContext(queueLocale, authState.visitorData, if (login) authState.dataSyncId else null),
                     videoId = videoId,
                     playlistId = playlistId,
                     playlistSetVideoId = playlistSetVideoId,
@@ -124,7 +137,7 @@ internal class InnerTubeBrowse(private val http: InnerTubeHttp) {
                 ),
             )
         }
-    }
+    } }
 
     suspend fun getSearchSuggestions(
         client: YouTubeClient,

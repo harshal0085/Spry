@@ -63,7 +63,7 @@ internal class TogetherGuestCoordinator(
         )
         when (decision) {
             is PlayQueueGateDecision.Denied -> {
-                delegate.showTogetherNotice(delegate.getString(R.string.not_allowed), key = decision.noticeKey)
+                delegate.showTogetherNotice(delegate.getString(R.string.spry_listening_along), key = decision.noticeKey)
                 return true
             }
             PlayQueueGateDecision.HandleAsGuest -> {
@@ -88,7 +88,7 @@ internal class TogetherGuestCoordinator(
                     )
                     when (plan) {
                         is GuestPlayQueuePlan.Blocked -> {
-                            delegate.showTogetherNotice(delegate.getString(R.string.not_allowed), key = plan.noticeKey)
+                            delegate.showTogetherNotice(delegate.getString(R.string.spry_listening_along), key = plan.noticeKey)
                         }
                         is GuestPlayQueuePlan.Execute -> {
                             delegate.showTogetherNotice(

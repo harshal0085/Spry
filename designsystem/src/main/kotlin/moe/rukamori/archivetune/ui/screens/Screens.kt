@@ -47,6 +47,14 @@ sealed class Screens(
         route = "library",
     )
 
+    // Spry: the developer's own tab, after Library; only admins get it (AdminScreens).
+    object Dev : Screens(
+        titleId = R.string.spry_dev,
+        iconIdInactive = R.drawable.ic_dev_outline,
+        iconIdActive = R.drawable.ic_dev,
+        route = "dev",
+    )
+
     object MoodAndGenres : Screens(
         titleId = R.string.mood_and_genres,
         iconIdInactive = R.drawable.style,
@@ -56,6 +64,7 @@ sealed class Screens(
 
     companion object {
         val MainScreens = listOf(Home, Friends, Search, Library)
+        val AdminScreens = MainScreens + Dev
         val TvMainScreens = listOf(Home, Search, Library)
     }
 }

@@ -37,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import moe.rukamori.archivetune.playback.together.leaveTogether
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
@@ -242,7 +243,14 @@ fun FriendsCard(
             }
         }
 
-        (vibeStatus ?: message)?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        val listening = service?.togetherSessionState?.collectAsState()?.value is moe.rukamori.archivetune.together.TogetherSessionState.Joined
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            (vibeStatus ?: message ?: "listening along".takeIf { listening })?.let {
+                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+            }
+            // a listener can't change songs; give them a way out
+            if (listening) TextButton(onClick = { service?.leaveTogether() }) { Text("Leave") }
+        }
     }
 }
 /**

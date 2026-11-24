@@ -39,6 +39,26 @@ fun FriendsScreen(navController: NavController) {
             modifier = Modifier.padding(top = 28.dp, bottom = 20.dp),
         )
         FriendsCard(onChat = { f -> navController.navigate("chat/${f.uid}/${android.net.Uri.encode(f.username)}") })
+    }
+}
+
+/** The developer's own tab (only shown to admins), so the Friends tab stays about friends. */
+@Composable
+fun DevScreen() {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .windowInsetsPadding(WindowInsets.statusBars)
+            .padding(horizontal = 20.dp)
+            .playerAwareBottomPadding(),
+    ) {
+        Text(
+            "Developer",
+            style = MaterialTheme.typography.headlineLarge,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(top = 28.dp, bottom = 8.dp),
+        )
         DeveloperPanel()
     }
 }
