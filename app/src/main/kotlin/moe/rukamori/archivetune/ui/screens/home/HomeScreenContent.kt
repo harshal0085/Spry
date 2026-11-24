@@ -148,12 +148,6 @@ internal fun HomeContent(
                         item(key = "home_dev_cards", contentType = "dev_cards") {
                             moe.rukamori.archivetune.friends.SpryHomeCards(modifier = Modifier.animateItem())
                         }
-                        item(key = "home_friends_online", contentType = "friends_online") {
-                            moe.rukamori.archivetune.friends.OnlineFriendsStrip(
-                                onOpenFriends = { navController.navigate("friends") },
-                                modifier = Modifier.animateItem(),
-                            )
-                        }
                     }
 
                     homeCommunitySection(

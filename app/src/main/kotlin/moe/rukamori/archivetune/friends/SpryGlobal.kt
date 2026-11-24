@@ -32,10 +32,26 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import moe.rukamori.archivetune.BuildConfig
-import moe.rukamori.archivetune.innertube.models.WatchEndpoint
+import moe.rukamori.archivetune.models.MediaMetadata
 import moe.rukamori.archivetune.playback.queues.YouTubeQueue
 import moe.rukamori.archivetune.playback.together.leaveTogether
+import moe.rukamori.archivetune.together.TogetherSessionState
 import moe.rukamori.archivetune.ui.main.LocalPlayerConnection
+
+/**
+ * Plays like tapping a song in the app: the song itself is handed to the player so it starts at once,
+ * instead of waiting on a YouTube lookup that can fail silently (seen on the iQOO).
+ */
+fun SpryFriends.FeaturedSong.toQueue() =
+    YouTubeQueue.radio(
+        MediaMetadata(
+            id = videoId,
+            title = title,
+            artists = listOf(MediaMetadata.Artist(id = null, name = artist)),
+            duration = -1,
+            thumbnailUrl = thumb.ifEmpty { null },
+        ),
+    )
 
 /** "just now", "5m ago", "3h ago", "2d ago". */
 fun agoText(at: Long?, now: Long = SpryChat.serverNow()): String {
@@ -91,14 +107,25 @@ fun SpryGlobalHost() {
         val playing by connection.isPlaying.collectAsState()
         val text = meta?.takeIf { playing }?.let { m -> listOf(m.title, m.artists.joinToString { it.name }).filter { it.isNotBlank() }.joinToString(" · ") }
         LaunchedEffect(text) { SpryFriends.setPlaying(text) }
+
+        val together by connection.service.togetherSessionState.collectAsState()
+        var wasJoined by remember { mutableStateOf(false) }
+        LaunchedEffect(together) {
+            val joined = together is TogetherSessionState.Joined
+            if (wasJoined && !joined) SpryFriends.onSessionLeft()
+            wasJoined = joined
+        }
     }
 
     // remote commands from the developer
-    LaunchedEffect(command) {
+    // keyed on connection too: a command that lands before the player binds waits for it instead of being dropped
+    LaunchedEffect(command, connection) {
         val cmd = command ?: return@LaunchedEffect
-        val service = connection?.service
+        android.util.Log.i("Spry", "running command ${cmd.type} connection=${connection != null}")
+        if (connection == null) return@LaunchedEffect
+        val service = connection.service
         when (cmd.type) {
-            "play" -> cmd.videoId?.let { id -> connection?.playQueue(YouTubeQueue(WatchEndpoint(videoId = id))) }
+            "play" -> cmd.song?.let { connection.playQueue(it.toQueue()) }
             "kick" -> service?.leaveTogether()
         }
         SpryFriends.commandHandled(cmd)

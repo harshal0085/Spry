@@ -176,7 +176,7 @@ fun DeveloperPanel(modifier: Modifier = Modifier) {
         Hint(config.featured?.let { "Dev's pick on everyone's Home: ${it.title}" } ?: "No Dev's pick on Home")
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(enabled = currentSong != null, onClick = { run { SpryFriends.setFeatured(currentSong) } }) { Text("Feature what I'm playing") }
-            if (config.featured != null) TextButton(onClick = { run { SpryFriends.setFeatured(null) } }) { Text("Clear") }
+            if (config.featured != null) TextButton(onClick = { run { SpryFriends.setFeatured(null) } }) { Text("Clear", maxLines = 1, softWrap = false) }
         }
         Button(
             enabled = currentSong != null && users.any { it.online },
@@ -258,7 +258,7 @@ fun DeveloperPanel(modifier: Modifier = Modifier) {
                     Button(onClick = {
                         ask = null
                         run { a.action(text) }
-                    }) { Text("Save") }
+                    }) { Text(if (a.title.startsWith("Alert")) "Send" else "Save") }
                 },
                 dismissButton = { TextButton(onClick = { ask = null }) { Text("Cancel") } },
             )

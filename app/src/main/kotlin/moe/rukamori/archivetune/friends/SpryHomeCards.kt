@@ -28,8 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import moe.rukamori.archivetune.innertube.models.WatchEndpoint
-import moe.rukamori.archivetune.playback.queues.YouTubeQueue
+import moe.rukamori.archivetune.together.TogetherSessionState
 import moe.rukamori.archivetune.ui.main.LocalPlayerConnection
 import moe.rukamori.archivetune.ui.theme.spryGlass
 
@@ -40,7 +39,10 @@ fun SpryHomeCards(modifier: Modifier = Modifier) {
     val user by SpryFriends.user.collectAsState()
     val connection = LocalPlayerConnection.current
     val featured = config.featured
-    val room = config.room?.takeIf { it.uid != user?.uid && user != null }
+    val paused = maintenanceActive()
+    val roomLive by SpryFriends.roomLive.collectAsState()
+    val room = config.room?.takeIf { it.uid != user?.uid && user != null && !paused && roomLive }
+    val inRoom = connection?.service?.togetherSessionState?.collectAsState()?.value is TogetherSessionState.Joined
     if (featured == null && room == null) return
 
     Column(modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -52,10 +54,10 @@ fun SpryHomeCards(modifier: Modifier = Modifier) {
                     Text("Listen along in sync", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Button(
-                    enabled = connection != null,
+                    enabled = connection != null && !inRoom,
                     onClick = { connection?.service?.let { SpryFriends.joinRoom(it) } },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF4F1F8), contentColor = Color(0xFF0B0A10)),
-                ) { Text("Join") }
+                ) { Text(if (inRoom) "Joined" else "Join") }
             }
         }
         featured?.let { f ->
@@ -73,7 +75,7 @@ fun SpryHomeCards(modifier: Modifier = Modifier) {
                 }
                 Button(
                     enabled = connection != null,
-                    onClick = { connection?.playQueue(YouTubeQueue(WatchEndpoint(videoId = f.videoId))) },
+                    onClick = { connection?.playQueue(f.toQueue()) },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF4F1F8), contentColor = Color(0xFF0B0A10)),
                 ) { Text("Play") }
             }

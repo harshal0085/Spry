@@ -138,7 +138,9 @@ object SpryFriends {
             object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) = onData(snapshot)
 
-                override fun onCancelled(error: DatabaseError) = Unit
+                override fun onCancelled(error: DatabaseError) {
+                    android.util.Log.w("Spry", "read refused at ${query.ref.path}: ${error.message}")
+                }
             }
         query.addValueEventListener(l)
         into += query to l
@@ -163,6 +165,10 @@ object SpryFriends {
         if (u == null) return
         val me = u.uid
         startDevWatch(me)
+        // the room-host read needs auth; one made before sign-in was refused, so start it again
+        roomWatch?.let { (q, l) -> q.removeEventListener(l) }
+        roomWatch = null
+        watchRoomHost(_config.value.room?.uid)
 
         listen(db.getReference("users/$me/username")) { _username.value = it.getValue(String::class.java).orEmpty() }
 
@@ -482,7 +488,7 @@ object SpryFriends {
 
     data class Alert(val id: String, val text: String)
 
-    data class Command(val type: String, val at: Long, val videoId: String?)
+    data class Command(val type: String, val at: Long, val song: FeaturedSong?)
 
     data class Stats(
         val users: Int = 0,
@@ -545,11 +551,39 @@ object SpryFriends {
                                     RoomInfo(it, r.child("title").getValue(String::class.java).orEmpty())
                                 },
                         )
+                    watchRoomHost(_config.value.room?.uid)
                 }
 
                 override fun onCancelled(error: DatabaseError) = Unit
             },
         )
+    }
+
+    private val _roomLive = MutableStateFlow(false)
+
+    /** True while the room's host really has a session up (config/room outlives an app restart). */
+    val roomLive = _roomLive.asStateFlow()
+    private var roomWatch: Pair<Query, ValueEventListener>? = null
+
+    private fun watchRoomHost(uid: String?) {
+        if (roomWatch?.first?.ref?.key == uid && uid != null) return
+        roomWatch?.let { (q, l) -> q.removeEventListener(l) }
+        roomWatch = null
+        _roomLive.value = false
+        if (uid == null) return
+        val q = db.getReference("sessions/$uid")
+        val l =
+            object : ValueEventListener {
+                override fun onDataChange(s: DataSnapshot) {
+                    _roomLive.value = s.hasChild("sid")
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    android.util.Log.w("Spry", "room host read refused: ${error.message}")
+                }
+            }
+        q.addValueEventListener(l)
+        roomWatch = q to l
     }
 
     /** Writes my presence: online + what I'm playing, or "offline" when the developer is hidden. */
@@ -658,7 +692,7 @@ object SpryFriends {
     /** Starts [song] on each of [targets]' phones. */
     suspend fun forcePlay(targets: List<UserRow>, song: FeaturedSong): String? {
         if (targets.isEmpty()) return "Nobody is online"
-        val cmd = mapOf("type" to "play", "videoId" to song.videoId, "at" to ServerValue.TIMESTAMP)
+        val cmd = mapOf("type" to "play", "videoId" to song.videoId, "title" to song.title, "artist" to song.artist, "thumb" to song.thumb, "at" to ServerValue.TIMESTAMP)
         return adminWrite(targets.associate { "commands/${it.uid}" to cmd }, "start the song")
     }
 
@@ -700,6 +734,12 @@ object SpryFriends {
     fun closeRoom(service: MusicService) {
         db.getReference("config/room").removeValue()
         service.leaveTogether()
+    }
+
+    /** The listening session ended (left, kicked, host closed): drop the stale "listening in…" line. */
+    fun onSessionLeft() {
+        val s = _vibeStatus.value ?: return
+        if (s.startsWith("listening") || s.startsWith("vibing")) _vibeStatus.value = null
     }
 
     /** Anyone: join the developer's public room. */
@@ -759,8 +799,17 @@ object SpryFriends {
         listen(db.getReference("commands/$me")) { s ->
             val type = s.child("type").getValue(String::class.java)
             val at = s.child("at").getValue(Long::class.java)
+            android.util.Log.i("Spry", "command $type at=$at lastDone=${lastHandledCommandAt()}")
             _command.value =
-                if (type != null && at != null && at > lastHandledCommandAt()) Command(type, at, s.child("videoId").getValue(String::class.java)) else null
+                if (type != null && at != null && at > lastHandledCommandAt()) {
+                    val song = s.child("videoId").getValue(String::class.java)?.let { id ->
+                        fun str(k: String) = s.child(k).getValue(String::class.java).orEmpty()
+                        FeaturedSong(id, str("title"), str("artist"), str("thumb"))
+                    }
+                    Command(type, at, song)
+                } else {
+                    null
+                }
         }
         listen(db.getReference("announcement")) { s ->
             val at = s.child("at").getValue(Long::class.java)

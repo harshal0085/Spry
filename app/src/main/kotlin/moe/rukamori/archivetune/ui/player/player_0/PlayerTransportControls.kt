@@ -82,14 +82,15 @@ fun PlayerTransportControls(
     val playPauseIcon = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow
 
     val isShuffleActive = state.shuffleState != "off"
-    val shuffleColor = if (isShuffleActive) animatedAccentColor else Color.White.copy(alpha = 0.5f)
+    // Spry: "on" is a white disc behind a white icon, so repeat-one / shuffle can't be on unnoticed
+    val shuffleColor = if (isShuffleActive) Color.White else Color.White.copy(alpha = 0.5f)
     val shuffleIcon = when (state.shuffleState) {
         "smart" -> R.drawable.ic_shuffle_mix
         else -> R.drawable.ic_shuffle
     }
 
     val isRepeatActive = state.repeatState != "off"
-    val repeatColor = if (isRepeatActive) animatedAccentColor else Color.White.copy(alpha = 0.5f)
+    val repeatColor = if (isRepeatActive) Color.White else Color.White.copy(alpha = 0.5f)
     val repeatIcon = when (state.repeatState) {
         "one" -> R.drawable.ic_repeat_one
         "all", "on" -> R.drawable.ic_repeat_on
@@ -120,7 +121,8 @@ fun PlayerTransportControls(
                         onAction(PlayerAction.Shuffle)
                     }
                     .size(OuterButtonSize)
-                    .clip(CircleShape),
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = if (isShuffleActive) 0.2f else 0f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Image(
@@ -219,7 +221,8 @@ fun PlayerTransportControls(
                         onAction(PlayerAction.Repeat)
                     }
                     .size(OuterButtonSize)
-                    .clip(CircleShape),
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = if (isRepeatActive) 0.2f else 0f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Image(
