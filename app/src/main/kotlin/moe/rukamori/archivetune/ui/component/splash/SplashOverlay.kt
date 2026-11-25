@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.imageResource
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import moe.rukamori.archivetune.LocalAnimationsDisabled
@@ -67,9 +68,9 @@ fun SplashOverlay(
     val currentOnPrewarmStart by rememberUpdatedState(onPrewarmStart)
     val currentOnDismiss by rememberUpdatedState(onDismiss)
 
-    val brush = remember { Animatable(0f) }
-    val seal = remember { Animatable(0f) }
+    val logo = remember { Animatable(0f) }
     val words = remember { Animatable(0f) }
+    val naez = remember { Animatable(0f) }
 
     LaunchedEffect(isReady, animationsDisabled) {
         if (!isReady) return@LaunchedEffect
@@ -77,11 +78,11 @@ fun SplashOverlay(
         if (animationsDisabled) {
             currentOnBurstStart(); currentOnDismiss(); return@LaunchedEffect
         }
-        // Spry: about 1s from tap to music (was ~2s); the stroke, stamp and name still play in full.
-        launch { delay(350); words.animateTo(1f, tween(350)) }
-        brush.animateTo(1f, tween(620, easing = FastOutSlowInEasing))
-        seal.animateTo(1f, tween(180, easing = FastOutSlowInEasing))
-        delay(160)
+        // Spry: ~1s. The Naez icon settles in, the name follows, Naez pops up from the bottom waving.
+        launch { delay(180); words.animateTo(1f, tween(300)) }
+        launch { delay(220); naez.animateTo(1f, androidx.compose.animation.core.spring(dampingRatio = 0.62f, stiffness = 420f)) }
+        logo.animateTo(1f, tween(320, easing = FastOutSlowInEasing))
+        delay(520)
         currentOnBurstStart()
         showSplash = false
         delay(SplashConfig.Reveal.FADE_MS.toLong())
@@ -101,38 +102,48 @@ fun SplashOverlay(
             contentAlignment = Alignment.Center,
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                Canvas(Modifier.size(140.dp)) {
-                    val stroke = size.minDimension * 0.06f
-                    val inset = stroke
-                    // the brush starts upper-right and travels round, leaving a gap like a real ensō
-                    drawArc(
-                        color = Paper,
-                        startAngle = -50f,
-                        sweepAngle = 300f * brush.value,
-                        useCenter = false,
-                        topLeft = Offset(inset, inset),
-                        size = Size(size.width - inset * 2, size.height - inset * 2),
-                        style = Stroke(width = stroke * (1f - 0.35f * brush.value), cap = StrokeCap.Round),
-                    )
-                    val s = size.minDimension * 0.15f
-                    val scale = 1.6f - 0.6f * seal.value
-                    val side = s * scale
-                    drawRoundRect(
-                        color = Seal.copy(alpha = seal.value),
-                        topLeft = Offset(size.width * 0.62f - (side - s) / 2, size.height * 0.62f - (side - s) / 2),
-                        size = Size(side, side),
-                        cornerRadius = CornerRadius(side * 0.12f),
-                    )
-                }
-                Spacer(Modifier.height(28.dp))
-                Column(
-                    Modifier.graphicsLayer { alpha = words.value; translationY = (1f - words.value) * 12f },
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Text("spry", color = Paper, fontSize = 26.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp)
-                    Text("スプライ", color = Paper.copy(alpha = 0.4f), fontSize = 11.sp, letterSpacing = 4.sp)
-                }
+                // the launcher icon itself (Naez's face on dark), so the system launch screen flows straight into this
+                androidx.compose.foundation.Image(
+                    bitmap = androidx.compose.ui.graphics.ImageBitmap.imageResource(moe.rukamori.archivetune.R.mipmap.spry_icon_face),
+                    contentDescription = null,
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    filterQuality = androidx.compose.ui.graphics.FilterQuality.High,
+                    modifier = Modifier
+                        .size(124.dp)
+                        .graphicsLayer {
+                            alpha = logo.value
+                            val s = 0.86f + 0.14f * logo.value
+                            scaleX = s; scaleY = s
+                            // show the adaptive-icon visible zone (middle 2/3), like on the home screen
+                            clip = true
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(30.dp)
+                        }
+                        .background(Ink)
+                        .graphicsLayer { scaleX = 1.5f; scaleY = 1.5f },
+                )
+                Spacer(Modifier.height(22.dp))
+                Text(
+                    "spry",
+                    color = Paper,
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 1.sp,
+                    modifier = Modifier.graphicsLayer { alpha = words.value; translationY = (1f - words.value) * 12f },
+                )
             }
+            // Naez pops up from the bottom edge, waving
+            androidx.compose.foundation.Image(
+                bitmap = androidx.compose.ui.graphics.ImageBitmap.imageResource(moe.rukamori.archivetune.R.drawable.naez_05),
+                contentDescription = null,
+                filterQuality = androidx.compose.ui.graphics.FilterQuality.High,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .size(width = 150.dp, height = 179.dp)
+                    .graphicsLayer {
+                        translationY = (1f - naez.value) * size.height
+                        alpha = naez.value.coerceIn(0f, 1f)
+                    },
+            )
         }
     }
 }

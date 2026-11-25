@@ -343,7 +343,22 @@ fun NaezHost(
         // time so she follows it when the nav bar hides; without a song, the top of the nav area.
         fun standY(): Float {
             val mini = NaezAnchor.miniTop
-            return if (hasSong && !mini.isNaN() && mini > 0f) mini - myTop + sink else boxH - with(density) { bottom.toPx() } + sink
+            val lib = moe.rukamori.archivetune.ui.component.NavAnchors.library
+            return when {
+                hasSong && !mini.isNaN() && mini > 0f -> mini - myTop + sink
+                lib != null && lib.top > 0f -> lib.top - myTop + sink // no song: on the nav bar, above Library
+                else -> boxH - with(density) { bottom.toPx() } + sink
+            }
+        }
+        fun standX(): Float {
+            val play = NaezAnchor.playCenterX
+            val lib = moe.rukamori.archivetune.ui.component.NavAnchors.library
+            val half = with(density) { STICKER_W.toPx() } / 2f
+            return when {
+                hasSong && !play.isNaN() && play > 0f -> play - half
+                lib != null -> lib.center.x - half
+                else -> cornerX
+            }
         }
         AnimatedVisibility(
             visible = current != null,
@@ -376,9 +391,7 @@ fun NaezHost(
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .offset {
-                    val play = NaezAnchor.playCenterX
-                    val x = if (hasSong && !play.isNaN() && play > 0f) play - STICKER_W.toPx() / 2f else cornerX
-                    androidx.compose.ui.unit.IntOffset(x.toInt(), (standY() - stickerHPx).toInt())
+                    androidx.compose.ui.unit.IntOffset(standX().toInt(), (standY() - stickerHPx).toInt())
                 }
                 .size(STICKER_W, STICKER_H)
                 .pointerInput(Unit) { detectTapGestures { onTap() } },

@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -105,65 +106,60 @@ fun Modifier.spryGlass(
 ): Modifier {
     val top = lerp(tint, Ink, 0.62f).copy(alpha = 0.62f * fillAlpha)
     val bottom = lerp(tint, Ink, 0.84f).copy(alpha = 0.78f * fillAlpha)
-    val tilt = LocalGlassTilt.current
     return this
         .clip(shape)
-        .background(Brush.verticalGradient(listOf(top, bottom)))
-        .drawWithContent {
-            // tilt is read here, in the draw phase, so phone movement only redraws: no recomposition.
-            val t = tilt.value
+        // Spry perf: every brush, outline and stroke is built once per size/colour and reused on each redraw,
+        // instead of allocating ~10 objects per card per frame (that churn caused GC pauses while scrolling).
+        .drawWithCache {
             val w = size.width
             val h = size.height
-            val lx = (0.15f - t.x * 0.6f)
-            val ly = (-0.1f + t.y * 0.5f)
-            val lightStart = Offset(w * lx, h * ly)
-            val lightEnd = Offset(w * (1f - lx), h * (1f - ly))
-            // diagonal sheen that follows the light
-            drawRect(
-                Brush.linearGradient(
-                    0f to Color.White.copy(alpha = 0.10f),
-                    0.42f to Color.Transparent,
-                    1f to Color.Transparent,
-                    start = lightStart,
-                    end = lightEnd,
-                ),
+            val fill = Brush.verticalGradient(listOf(top, bottom))
+            val lightStart = Offset(w * 0.15f, h * -0.1f)
+            val lightEnd = Offset(w * 0.85f, h * 1.1f)
+            // diagonal sheen from the top-left light
+            val sheen = Brush.linearGradient(
+                0f to Color.White.copy(alpha = 0.10f),
+                0.42f to Color.Transparent,
+                1f to Color.Transparent,
+                start = lightStart,
+                end = lightEnd,
             )
             // thickness: a soft dark band inside the bottom edge
             val depth = 14.dp.toPx().coerceAtMost(h / 3f)
-            drawRect(
-                Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.22f)), startY = h - depth, endY = h),
-                topLeft = Offset(0f, h - depth),
-            )
-            drawContent()
+            val band = Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.22f)), startY = h - depth, endY = h)
             val outline = shape.createOutline(size, layoutDirection, this)
             // outer rim: bright where the light hits, fading, catching again on the far edge
-            drawOutline(
-                outline,
-                Brush.linearGradient(
-                    0f to Color.White.copy(alpha = 0.6f),
-                    0.35f to Color.White.copy(alpha = 0.10f),
-                    0.7f to Color.White.copy(alpha = 0.06f),
-                    1f to Color.White.copy(alpha = 0.34f),
-                    start = lightStart,
-                    end = lightEnd,
-                ),
-                style = Stroke(rim.toPx() * 2f), // half falls outside the clip, leaving a [rim]-wide edge
+            val rimBrush = Brush.linearGradient(
+                0f to Color.White.copy(alpha = 0.6f),
+                0.35f to Color.White.copy(alpha = 0.10f),
+                0.7f to Color.White.copy(alpha = 0.06f),
+                1f to Color.White.copy(alpha = 0.34f),
+                start = lightStart,
+                end = lightEnd,
             )
+            val rimStroke = Stroke(rim.toPx() * 2f) // half falls outside the clip, leaving a [rim]-wide edge
             // inner rim: a faint second edge that sells the glass thickness
             val inset = rim.toPx() * 2.5f
             val inner = shape.createOutline(Size(w - inset * 2, h - inset * 2), layoutDirection, this)
-            translate(inset, inset) {
-                drawOutline(inner, Color.White.copy(alpha = 0.06f), style = Stroke(rim.toPx()))
+            val innerStroke = Stroke(rim.toPx())
+            val innerColor = Color.White.copy(alpha = 0.06f)
+            val glintSpots = if (glints) {
+                listOf(
+                    Offset(w * 0.84f, 0f) to 7.dp.toPx(),
+                    Offset(w * 0.14f, h) to 6.dp.toPx(),
+                    Offset(w, h * 0.35f) to 4.dp.toPx(),
+                ).map { (at, r) -> Triple(at, r, Brush.radialGradient(listOf(Color.White.copy(alpha = 0.85f), Color.Transparent), at, r)) }
+            } else {
+                emptyList()
             }
-            if (glints) {
-                fun glint(at: Offset, r: Float) = drawCircle(
-                    Brush.radialGradient(listOf(Color.White.copy(alpha = 0.85f), Color.Transparent), at, r),
-                    r,
-                    at,
-                )
-                glint(Offset(w * (0.84f - t.x * 0.35f).coerceIn(0.08f, 0.92f), 0f), 7.dp.toPx())
-                glint(Offset(w * (0.14f - t.x * 0.35f).coerceIn(0.08f, 0.92f), h), 6.dp.toPx())
-                glint(Offset(w, h * (0.35f + t.y * 0.3f).coerceIn(0.15f, 0.85f)), 4.dp.toPx())
+            onDrawWithContent {
+                drawRect(fill)
+                drawRect(sheen)
+                drawRect(band, topLeft = Offset(0f, h - depth))
+                drawContent()
+                drawOutline(outline, rimBrush, style = rimStroke)
+                translate(inset, inset) { drawOutline(inner, innerColor, style = innerStroke) }
+                for ((at, r, brush) in glintSpots) drawCircle(brush, r, at)
             }
         }
 }

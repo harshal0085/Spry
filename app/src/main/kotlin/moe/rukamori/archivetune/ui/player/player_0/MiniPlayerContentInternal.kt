@@ -76,7 +76,9 @@ internal fun MiniPlayerContentInternal(
     }
 
     val rotation = remember { Animatable(0f) }
-    val isAudible = state.isPlaying && state.isReady
+    // Spry perf: "Disable animations" also stops the spinning cover and the moving wave (they redraw every frame).
+    val animationsDisabled = moe.rukamori.archivetune.LocalAnimationsDisabled.current
+    val isAudible = state.isPlaying && state.isReady && !animationsDisabled
 
     LaunchedEffect(isAudible, isVisible) {
         if (isAudible && isVisible) {

@@ -42,6 +42,11 @@ import moe.rukamori.archivetune.constants.NavigationBarInnerPaddingHorizontal
 import moe.rukamori.archivetune.constants.NavigationBarOverflowPaddingHorizontal
 import moe.rukamori.archivetune.constants.NavigationBarVisibilityDurationMs
 import moe.rukamori.archivetune.ui.screens.Screens
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import moe.rukamori.archivetune.ui.settings.SettingsDimensions
 import moe.rukamori.archivetune.ui.theme.glassStroke
 
@@ -177,6 +182,12 @@ fun FloatingNavigationToolbar(
                 items.forEach { screen ->
                     val selected = isSelected(screen)
                     NavigationTabItem(
+                        modifier = if (screen == Screens.Library) {
+                            // Spry: Naez stands above the Library tab when there's no mini player to stand on
+                            Modifier.onGloballyPositioned { NavAnchors.library = it.boundsInRoot() }
+                        } else {
+                            Modifier
+                        },
                         screen = screen,
                         selected = selected,
                         pureBlack = pureBlack,
@@ -213,4 +224,9 @@ fun FloatingNavigationToolbar(
             }
         }
     }
+}
+
+/** Where nav tabs sit on screen (root pixels), for things that stand on the bar, like Naez. */
+object NavAnchors {
+    var library by mutableStateOf<Rect?>(null)
 }
