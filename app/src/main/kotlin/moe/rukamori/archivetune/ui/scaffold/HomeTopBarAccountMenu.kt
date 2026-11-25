@@ -58,15 +58,19 @@ fun HomeTopBarAccountMenu(
             blurNavBar = blurNavBar,
             pureBlack = pureBlack,
         ) {
+            // Spry: one login. The header is the Spry (Google) account; YouTube login stays optional in Settings > Account.
+            val spryUser by moe.rukamori.archivetune.friends.SpryFriends.user.collectAsState()
+            val spryName by moe.rukamori.archivetune.friends.SpryFriends.username.collectAsState()
             TopBarAccountMenuContent(
-                avatarUrl = avatarUrl,
-                accountName = accountName,
+                avatarUrl = spryUser?.photoUrl?.toString() ?: avatarUrl,
+                accountName = spryName?.takeIf { it.isNotEmpty() }?.let { "@$it" } ?: spryUser?.displayName.orEmpty(),
+                accountSubtitle = spryUser?.email,
                 accentColor = accentColor,
                 hasUnreadNews = hasUnreadNews,
                 hasUpdate = hasUpdate,
                 onNavigateProfile = {
                     expanded = false
-                    onNavigateProfile()
+                    onNavigateFriends()
                 },
                 onNavigateHistory = {
                     expanded = false

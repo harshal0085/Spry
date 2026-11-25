@@ -56,6 +56,7 @@ internal fun TopBarAccountMenuContent(
     accentColor: Color? = null,
     hasUnreadNews: Boolean = false,
     hasUpdate: Boolean = false,
+    accountSubtitle: String? = null,
 ) {
     val gradientStart = accentColor?.copy(alpha = 0.35f)
         ?: MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
@@ -121,7 +122,7 @@ internal fun TopBarAccountMenuContent(
                     )
                     Text(
                         text = if (accountName.isNotBlank()) {
-                            stringResource(R.string.account)
+                            accountSubtitle ?: stringResource(R.string.account)
                         } else {
                             stringResource(R.string.not_logged_in)
                         },
