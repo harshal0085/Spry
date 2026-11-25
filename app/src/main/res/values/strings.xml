@@ -1339,7 +1339,7 @@
     <string name="canvas_settings_load_failed">Could not load Canvas settings</string>
     <string name="canvas_settings_update_failed">Could not update Canvas settings</string>
     <string name="settings_graphics_title">Graphics &amp; Performance</string>
-    <string name="settings_graphics_summary">Blur, procedural backgrounds, refresh rate</string>
+    <string name="settings_graphics_summary">Blur, refresh rate, animations</string>
     <string name="settings_graphics_hud_title">Device Load &amp; GPU</string>
     <string name="settings_graphics_hud_status_optimal">Optimal</string>
     <string name="settings_graphics_hud_status_alert">Alert</string>

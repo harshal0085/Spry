@@ -27,18 +27,11 @@ import moe.rukamori.archivetune.app.init.rememberAppSplashState
 import moe.rukamori.archivetune.constants.AppFontPreference
 import moe.rukamori.archivetune.constants.CustomFontUriKey
 import moe.rukamori.archivetune.constants.CustomThemeColorKey
-import moe.rukamori.archivetune.constants.DarkModeKey
 import moe.rukamori.archivetune.constants.DisableAnimationsKey
 import moe.rukamori.archivetune.constants.DynamicThemeKey
 import moe.rukamori.archivetune.constants.FontPreferenceKey
-import moe.rukamori.archivetune.constants.HomeBackgroundBrightnessKey
-import moe.rukamori.archivetune.constants.HomeBackgroundParallaxEnabledKey
-import moe.rukamori.archivetune.constants.HomeBackgroundParallaxStrengthKey
-import moe.rukamori.archivetune.constants.HomeBackgroundStyle
-import moe.rukamori.archivetune.constants.HomeBackgroundStyleKey
 import moe.rukamori.archivetune.constants.MarqueeEnabledKey
 import moe.rukamori.archivetune.constants.PureBlackKey
-import moe.rukamori.archivetune.constants.RandomHomeBackgroundOnStartupKey
 import moe.rukamori.archivetune.constants.UpdateChannelKey
 import moe.rukamori.archivetune.constants.UseSystemFontKey
 import moe.rukamori.archivetune.db.MusicDatabase
@@ -51,7 +44,6 @@ import moe.rukamori.archivetune.ui.component.MenuState
 import moe.rukamori.archivetune.ui.rememberDynamicThemeColor
 import moe.rukamori.archivetune.ui.scaffold.ScaffoldShell
 import moe.rukamori.archivetune.ui.screens.onboarding.OnboardingRoute
-import moe.rukamori.archivetune.ui.screens.settings.DarkMode
 import moe.rukamori.archivetune.ui.system.SystemBarController
 import moe.rukamori.archivetune.ui.theme.ArchiveTuneTheme
 import moe.rukamori.archivetune.utils.SyncUtils
@@ -100,7 +92,6 @@ fun YumaApp(
 
     val enableDynamicTheme by rememberPreference(DynamicThemeKey, defaultValue = true)
     val customThemeColorValue by rememberPreference(CustomThemeColorKey, defaultValue = "default")
-    val darkTheme by rememberEnumPreference(DarkModeKey, defaultValue = DarkMode.AUTO)
     val defaultDisableAnimations = remember(activity) { activity.applicationContext.isLowRamDevice() }
     val disableAnimations by rememberPreference(
         DisableAnimationsKey,
@@ -117,37 +108,6 @@ fun YumaApp(
             disableAnimations = disableAnimations,
             onReadyChange = onReadyChange,
         )
-    val homeBackgroundStyle by
-    rememberEnumPreference(
-        HomeBackgroundStyleKey,
-        HomeBackgroundStyle.OFF,
-    )
-
-    val randomHomeBackgroundOnStartup by
-    rememberPreference(
-        RandomHomeBackgroundOnStartupKey,
-        defaultValue = false,
-    )
-
-    val randomStartupStyle =
-        remember(randomHomeBackgroundOnStartup) {
-            HomeBackgroundStyle.entries.filterNot { it == HomeBackgroundStyle.OFF }.random()
-        }
-
-    val effectiveHomeBackgroundStyle =
-        if (randomHomeBackgroundOnStartup) {
-            randomStartupStyle
-        } else {
-            homeBackgroundStyle
-        }
-
-    val homeBackgroundParallaxEnabled by
-    rememberPreference(
-        HomeBackgroundParallaxEnabledKey,
-        defaultValue = true,
-    )
-    val homeBackgroundParallaxStrength by rememberPreference(HomeBackgroundParallaxStrengthKey, defaultValue = 0.6f)
-    val homeBackgroundBrightness by rememberPreference(HomeBackgroundBrightnessKey, defaultValue = 1f)
     val fontPreference by rememberEnumPreference(FontPreferenceKey, defaultValue = AppFontPreference.DEFAULT)
     val customFontUri by rememberPreference(CustomFontUriKey, defaultValue = "")
     val legacyUseSystemFont by rememberPreference(UseSystemFontKey, defaultValue = false)
@@ -226,10 +186,6 @@ fun YumaApp(
             splashEnabled = splashState.splashEnabled,
             useDarkTheme = useDarkTheme,
             pureBlack = pureBlack,
-            homeBackgroundStyle = effectiveHomeBackgroundStyle,
-            homeBackgroundParallaxEnabled = homeBackgroundParallaxEnabled,
-            homeBackgroundParallaxStrength = homeBackgroundParallaxStrength,
-            homeBackgroundBrightness = homeBackgroundBrightness,
             contentAlpha = splashState.contentAlpha,
             contentMounted = splashState.contentMounted,
             contentVisible = splashState.contentVisible,

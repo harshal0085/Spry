@@ -30,14 +30,10 @@ import com.valentinilk.shimmer.LocalShimmerTheme
 import moe.rukamori.archivetune.LocalAnimationsDisabled
 import moe.rukamori.archivetune.LocalMarqueeEnabled
 import moe.rukamori.archivetune.LocalPlayerAwareWindowInsets
-import moe.rukamori.archivetune.constants.HomeBackgroundStyle
 import moe.rukamori.archivetune.constants.SearchSource
 import moe.rukamori.archivetune.constants.UpdateChannel
 import moe.rukamori.archivetune.db.MusicDatabase
 import moe.rukamori.archivetune.download.DownloadUtil
-import moe.rukamori.archivetune.home.effects.HomeBackgroundSettings
-import moe.rukamori.archivetune.home.effects.LocalHomeBackgroundStyle
-import moe.rukamori.archivetune.home.effects.ScreenBackground
 import moe.rukamori.archivetune.playback.PlayerConnection
 import moe.rukamori.archivetune.ui.PlayerViewModel
 import moe.rukamori.archivetune.ui.component.BottomSheetPageState
@@ -80,10 +76,6 @@ fun ScaffoldShell(
     splashEnabled: Boolean,
     useDarkTheme: Boolean,
     pureBlack: Boolean,
-    homeBackgroundStyle: HomeBackgroundStyle,
-    homeBackgroundParallaxEnabled: Boolean,
-    homeBackgroundParallaxStrength: Float,
-    homeBackgroundBrightness: Float,
     contentAlpha: () -> Float,
     contentMounted: Boolean,
     contentVisible: Boolean,
@@ -135,7 +127,6 @@ fun ScaffoldShell(
             LocalAnimationsDisabled provides disableAnimations,
             // Spry: long text ends in "…" instead of scrolling (scrolling showed words cut mid-way); the player title still scrolls.
             LocalMarqueeEnabled provides false,
-            LocalHomeBackgroundStyle provides HomeBackgroundSettings(homeBackgroundStyle, homeBackgroundParallaxEnabled, homeBackgroundParallaxStrength, homeBackgroundBrightness),
             LocalDatabase provides database,
             LocalContentColor provides if (pureBlack) Color.White else contentColorFor(MaterialTheme.colorScheme.surface),
             LocalPlayerConnection provides playerConnection,
@@ -150,10 +141,6 @@ fun ScaffoldShell(
         ) {
           // Spry: every surface in the app carries the playing song's hue.
           MaterialTheme(colorScheme = songScheme) {
-            ScreenBackground(
-                isVisible = LocalGlobalVisibility.current && contentVisible,
-                modifier = Modifier.fillMaxSize(),
-            )
             if (splashEnabled) {
                 SplashOverlay(
                     isDark = useDarkTheme,

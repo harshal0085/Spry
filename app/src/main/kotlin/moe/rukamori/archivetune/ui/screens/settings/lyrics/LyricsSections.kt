@@ -156,8 +156,6 @@ internal fun LyricsSettingsContent(
         LyricsDisplaySection(
             lyricsClick = state.lyricsClick,
             onLyricsClickChange = actions.onLyricsClickChange,
-            lyricsScroll = state.lyricsScroll,
-            onLyricsScrollChange = actions.onLyricsScrollChange,
             lyricsLineBlur = state.lyricsLineBlur,
             onLyricsLineBlurChange = actions.onLyricsLineBlurChange,
             lyricsTextSize = state.lyricsTextSize,

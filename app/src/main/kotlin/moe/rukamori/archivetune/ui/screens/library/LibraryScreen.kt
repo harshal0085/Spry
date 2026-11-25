@@ -102,9 +102,11 @@ fun LibraryScreen(
     var showTagsManagementDialog by rememberSaveable { mutableStateOf(false) }
     val spotifyState by spotifyAccountViewModel.uiState.collectAsStateWithLifecycle()
     val activeSelectedTagIds = if (showTagsInLibrary) selectedTagIds else emptySet()
+    // Spry: the Spotify chip only when Spotify is actually connected (it errored and showed nothing otherwise).
+    val spotifyChip = showSpotifyPlaylists && spotifyState.isAuthenticated
     val libraryFilters =
-        remember(showSpotifyPlaylists) {
-            if (showSpotifyPlaylists) {
+        remember(spotifyChip) {
+            if (spotifyChip) {
                 listOf(
                     LibraryFilter.LIBRARY,
                     LibraryFilter.PLAYLISTS,

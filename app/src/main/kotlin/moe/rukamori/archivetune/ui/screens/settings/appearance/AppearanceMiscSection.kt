@@ -41,8 +41,6 @@ fun AppearanceMiscSection(
         onShowTagsInLibraryChange = actions.onShowTagsInLibraryChange,
         swipeToSong = state.swipeToSong,
         onSwipeToSongChange = actions.onSwipeToSongChange,
-        marqueeEnabled = state.marqueeEnabled,
-        onMarqueeEnabledChange = actions.onMarqueeEnabledChange,
         modifier = modifier,
     )
 }
@@ -61,8 +59,6 @@ fun AppearanceMiscSection(
     onShowTagsInLibraryChange: (Boolean) -> Unit,
     swipeToSong: Boolean,
     onSwipeToSongChange: (Boolean) -> Unit,
-    marqueeEnabled: Boolean,
-    onMarqueeEnabledChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     PreferenceGroup(

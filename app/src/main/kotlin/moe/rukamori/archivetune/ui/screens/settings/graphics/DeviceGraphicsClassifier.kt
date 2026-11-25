@@ -18,38 +18,15 @@ import moe.rukamori.archivetune.constants.BlurNavBarKey
 import moe.rukamori.archivetune.constants.BlurRadiusKey
 import moe.rukamori.archivetune.constants.ForceHighRefreshRateKey
 import moe.rukamori.archivetune.constants.GraphicsPresetAppliedKey
-import moe.rukamori.archivetune.constants.HomeBackgroundParallaxEnabledKey
-import moe.rukamori.archivetune.constants.HomeBackgroundStyle
-import moe.rukamori.archivetune.constants.HomeBackgroundStyleKey
 
 enum class GraphicsPreset(
     val blurNavBar: Boolean,
     val blurRadius: Float,
-    val homeBackgroundStyle: HomeBackgroundStyle,
-    val parallaxEnabled: Boolean,
     val forceHighRefreshRate: Boolean,
 ) {
-    LOW(
-        blurNavBar = false,
-        blurRadius = 0f,
-        homeBackgroundStyle = HomeBackgroundStyle.TONAL,
-        parallaxEnabled = false,
-        forceHighRefreshRate = false,
-    ),
-    MEDIUM(
-        blurNavBar = true,
-        blurRadius = 16f,
-        homeBackgroundStyle = HomeBackgroundStyle.MESH,
-        parallaxEnabled = false,
-        forceHighRefreshRate = false,
-    ),
-    HIGH(
-        blurNavBar = true,
-        blurRadius = 24f,
-        homeBackgroundStyle = HomeBackgroundStyle.CIRCLES,
-        parallaxEnabled = true,
-        forceHighRefreshRate = true,
-    ),
+    LOW(blurNavBar = false, blurRadius = 0f, forceHighRefreshRate = false),
+    MEDIUM(blurNavBar = true, blurRadius = 16f, forceHighRefreshRate = false),
+    HIGH(blurNavBar = true, blurRadius = 24f, forceHighRefreshRate = true),
 }
 
 @Singleton
@@ -90,8 +67,6 @@ class DeviceGraphicsClassifier @Inject constructor(
             preferences[GraphicsPresetAppliedKey] = true
             preferences[BlurNavBarKey] = preset.blurNavBar
             preferences[BlurRadiusKey] = preset.blurRadius
-            preferences[HomeBackgroundStyleKey] = preset.homeBackgroundStyle.name
-            preferences[HomeBackgroundParallaxEnabledKey] = preset.parallaxEnabled
             preferences[ForceHighRefreshRateKey] = preset.forceHighRefreshRate
         }
     }

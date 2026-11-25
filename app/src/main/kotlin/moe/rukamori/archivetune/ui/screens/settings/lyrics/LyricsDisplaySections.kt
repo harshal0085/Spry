@@ -179,8 +179,6 @@ internal fun LyricsLineSpacingDialog(
 internal fun LyricsDisplaySection(
     lyricsClick: Boolean,
     onLyricsClickChange: (Boolean) -> Unit,
-    lyricsScroll: Boolean,
-    onLyricsScrollChange: (Boolean) -> Unit,
     lyricsLineBlur: Boolean,
     onLyricsLineBlurChange: (Boolean) -> Unit,
     lyricsTextSize: Float,

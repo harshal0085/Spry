@@ -22,7 +22,6 @@ import moe.rukamori.archivetune.constants.LyricsRomanizeHindiKey
 import moe.rukamori.archivetune.constants.LyricsRomanizeJapaneseKey
 import moe.rukamori.archivetune.constants.LyricsRomanizeKoreanKey
 import moe.rukamori.archivetune.constants.LyricsRomanizeOtherLanguagesKey
-import moe.rukamori.archivetune.constants.LyricsScrollKey
 import moe.rukamori.archivetune.constants.LyricsTextSizeKey
 import moe.rukamori.archivetune.constants.PreferredLyricsProvider
 import moe.rukamori.archivetune.constants.PreloadQueueLyricsEnabledKey
@@ -36,7 +35,6 @@ internal object LyricsContract {
     const val DEFAULT_QUEUE_PRELOAD_COUNT = 1
 
     val ClickKey = LyricsClickKey
-    val ScrollKey = LyricsScrollKey
     val TextSizeKey = LyricsTextSizeKey
     val LineSpacingKey = LyricsLineSpacingKey
     val BetterLyricsKey = EnableBetterLyricsKey
@@ -69,7 +67,6 @@ internal fun PreferredLyricsProvider.displayName(): String =
 @Immutable
 data class LyricsSettingsUiState(
     val lyricsClick: Boolean = true,
-    val lyricsScroll: Boolean = true,
     val lyricsLineBlur: Boolean = true,
     val lyricsTextSize: Float = LyricsContract.DEFAULT_TEXT_SIZE,
     val lyricsLineSpacing: Float = LyricsContract.DEFAULT_LINE_SPACING,
@@ -96,7 +93,6 @@ data class LyricsSettingsUiActions(
     val onNavigateUp: () -> Unit = {},
     val onNavigateHome: () -> Unit = {},
     val onLyricsClickChange: (Boolean) -> Unit = {},
-    val onLyricsScrollChange: (Boolean) -> Unit = {},
     val onLyricsLineBlurChange: (Boolean) -> Unit = {},
     val onLyricsTextSizeChange: (Float) -> Unit = {},
     val onLyricsLineSpacingChange: (Float) -> Unit = {},

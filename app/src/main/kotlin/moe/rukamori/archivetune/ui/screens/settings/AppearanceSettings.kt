@@ -9,7 +9,6 @@ import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -25,21 +24,16 @@ import moe.rukamori.archivetune.constants.AppFontPreference
 import moe.rukamori.archivetune.constants.ChipSortTypeKey
 import moe.rukamori.archivetune.constants.CustomFontNameKey
 import moe.rukamori.archivetune.constants.CustomFontUriKey
-import moe.rukamori.archivetune.constants.DarkModeKey
 import moe.rukamori.archivetune.constants.DefaultOpenTabKey
 import moe.rukamori.archivetune.constants.DynamicThemeKey
 import moe.rukamori.archivetune.constants.FontPreferenceKey
 import moe.rukamori.archivetune.constants.LibraryFilter
-import moe.rukamori.archivetune.constants.MarqueeEnabledKey
-import moe.rukamori.archivetune.constants.PureBlackKey
 import moe.rukamori.archivetune.constants.QuickPicksDisplayMode
 import moe.rukamori.archivetune.constants.QuickPicksDisplayModeKey
 import moe.rukamori.archivetune.constants.RandomThemeOnStartupKey
 import moe.rukamori.archivetune.constants.ShowHomeCategoryChipsKey
 import moe.rukamori.archivetune.constants.ShowTagsInLibraryKey
 import moe.rukamori.archivetune.constants.SplashOverlayEnabledKey
-import moe.rukamori.archivetune.constants.SplashShapePreference
-import moe.rukamori.archivetune.constants.SplashShapePreferenceKey
 import moe.rukamori.archivetune.constants.SwipeToSongKey
 import moe.rukamori.archivetune.ui.screens.settings.components.YumaSettingsScaffold
 import moe.rukamori.archivetune.ui.theme.CustomFontLoader
@@ -61,21 +55,10 @@ fun AppearanceSettings(navController: NavController) {
             RandomThemeOnStartupKey,
             defaultValue = false,
         )
-    val (darkMode, onDarkModeChange) =
-        rememberEnumPreference(
-            DarkModeKey,
-            defaultValue = DarkMode.AUTO,
-        )
-    val (pureBlack, onPureBlackChange) = rememberPreference(PureBlackKey, defaultValue = false)
     val (splashOverlayEnabled, onSplashOverlayEnabledChange) =
         rememberPreference(
             SplashOverlayEnabledKey,
             defaultValue = true,
-        )
-    val (splashShapePreference, onSplashShapePreferenceChange) =
-        rememberEnumPreference(
-            SplashShapePreferenceKey,
-            defaultValue = SplashShapePreference.LOGO,
         )
     val (fontPreference, onFontPreferenceChange) =
         rememberEnumPreference(
@@ -115,11 +98,6 @@ fun AppearanceSettings(navController: NavController) {
             QuickPicksDisplayModeKey,
             defaultValue = QuickPicksDisplayMode.HERO,
         )
-    val (marqueeEnabled, onMarqueeEnabledChange) =
-        rememberPreference(
-            MarqueeEnabledKey,
-            defaultValue = true,
-        )
 
     val fontPickerLauncher =
         rememberLauncherForActivityResult(
@@ -156,21 +134,12 @@ fun AppearanceSettings(navController: NavController) {
         }
     }
 
-    val isSystemInDarkTheme = isSystemInDarkTheme()
-    val useDarkTheme =
-        remember(darkMode, isSystemInDarkTheme) {
-            if (darkMode == DarkMode.AUTO) isSystemInDarkTheme else darkMode == DarkMode.ON
-        }
 
     val state =
         AppearanceUiState(
             dynamicTheme = dynamicTheme,
             randomThemeOnStartup = randomThemeOnStartup,
-            darkMode = darkMode,
-            useDarkTheme = useDarkTheme,
-            pureBlack = pureBlack,
             splashOverlayEnabled = splashOverlayEnabled,
-            splashShapePreference = splashShapePreference,
             fontPreference = fontPreference,
             customFontUri = customFontUri,
             customFontName = customFontName,
@@ -180,7 +149,6 @@ fun AppearanceSettings(navController: NavController) {
             showHomeCategoryChips = showHomeCategoryChips,
             showTagsInLibrary = showTagsInLibrary,
             swipeToSong = swipeToSong,
-            marqueeEnabled = marqueeEnabled,
         )
 
     val actions =
@@ -192,10 +160,7 @@ fun AppearanceSettings(navController: NavController) {
                 onNavigateGraphics = { navController.navigate(AppearanceContract.GRAPHICS_ROUTE) },
                 onDynamicThemeChange = onDynamicThemeChange,
                 onRandomThemeOnStartupChange = onRandomThemeOnStartupChange,
-                onDarkModeChange = onDarkModeChange,
-                onPureBlackChange = onPureBlackChange,
                 onSplashOverlayEnabledChange = onSplashOverlayEnabledChange,
-                onSplashShapePreferenceChange = onSplashShapePreferenceChange,
                 onNavigateCanvas = { navController.navigate(AppearanceContract.CANVAS_ROUTE) },
                 onFontPreferenceChange = onFontPreferenceChange,
                 onPickCustomFont = pickCustomFont,
@@ -205,7 +170,6 @@ fun AppearanceSettings(navController: NavController) {
                 onShowHomeCategoryChipsChange = onShowHomeCategoryChipsChange,
                 onShowTagsInLibraryChange = onShowTagsInLibraryChange,
                 onSwipeToSongChange = onSwipeToSongChange,
-                onMarqueeEnabledChange = onMarqueeEnabledChange,
             )
         }
 

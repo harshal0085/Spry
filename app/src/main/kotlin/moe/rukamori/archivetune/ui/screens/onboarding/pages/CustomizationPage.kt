@@ -34,14 +34,12 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import moe.rukamori.archivetune.App.Companion.forgetAccount
 import moe.rukamori.archivetune.R
-import moe.rukamori.archivetune.constants.HomeBackgroundStyle
 import moe.rukamori.archivetune.constants.PlaybackSource
 import moe.rukamori.archivetune.onboarding.OnboardingUiState
 import moe.rukamori.archivetune.spotify.SpotifyAccountViewModel
 import moe.rukamori.archivetune.ui.screens.login.LoginScreen
 import moe.rukamori.archivetune.ui.screens.onboarding.components.ExpressivePageHeader
 import moe.rukamori.archivetune.ui.screens.onboarding.components.OnboardingContentMaxWidth
-import moe.rukamori.archivetune.ui.screens.settings.DarkMode
 import moe.rukamori.archivetune.ui.screens.settings.SpotifyLoginSheet
 import moe.rukamori.archivetune.ui.screens.settings.account.component.ExpressiveSegmentedRow
 import moe.rukamori.archivetune.ui.screens.settings.account.header.ProfileIdentityCard
@@ -96,8 +94,6 @@ internal fun CustomizationPage(
         else -> stringResource(R.string.login)
     }
 
-    val (darkMode, onDarkModeChange) = moe.rukamori.archivetune.utils.rememberEnumPreference<DarkMode>(moe.rukamori.archivetune.constants.DarkModeKey, defaultValue = DarkMode.AUTO)
-    val (homeBackgroundStyle, onHomeBackgroundStyleChange) = moe.rukamori.archivetune.utils.rememberEnumPreference<HomeBackgroundStyle>(moe.rukamori.archivetune.constants.HomeBackgroundStyleKey, defaultValue = HomeBackgroundStyle.OFF)
 
     val (useSpotifyHome, onUseSpotifyHomeChange) = moe.rukamori.archivetune.utils.rememberPreference(moe.rukamori.archivetune.constants.UseSpotifyHomeKey, false)
 

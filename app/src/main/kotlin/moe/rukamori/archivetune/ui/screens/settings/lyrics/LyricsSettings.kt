@@ -50,7 +50,6 @@ import moe.rukamori.archivetune.constants.LyricsRomanizeHindiKey
 import moe.rukamori.archivetune.constants.LyricsRomanizeJapaneseKey
 import moe.rukamori.archivetune.constants.LyricsRomanizeKoreanKey
 import moe.rukamori.archivetune.constants.LyricsRomanizeOtherLanguagesKey
-import moe.rukamori.archivetune.constants.LyricsScrollKey
 import moe.rukamori.archivetune.constants.LyricsTextSizeKey
 import moe.rukamori.archivetune.constants.PreloadQueueLyricsEnabledKey
 import moe.rukamori.archivetune.constants.QueueLyricsPreloadCountKey
@@ -72,7 +71,6 @@ fun LyricsSettings(
     var showLyricsLineSpacingDialog by rememberSaveable { mutableStateOf(false) }
 
     val (lyricsClick, onLyricsClickChange) = rememberPreference(LyricsClickKey, defaultValue = true)
-    val (lyricsScroll, onLyricsScrollChange) = rememberPreference(LyricsScrollKey, defaultValue = true)
     val (lyricsTextSize, onLyricsTextSizeChange) =
         rememberPreference(LyricsTextSizeKey, defaultValue = LyricsContract.DEFAULT_TEXT_SIZE)
     val (lyricsLineSpacing, onLyricsLineSpacingChange) =
@@ -166,7 +164,6 @@ fun LyricsSettings(
     val state =
         LyricsSettingsUiState(
             lyricsClick = lyricsClick,
-            lyricsScroll = lyricsScroll,
             lyricsLineBlur = lyricsLineBlur,
             lyricsTextSize = lyricsTextSize,
             lyricsLineSpacing = lyricsLineSpacing,
@@ -191,7 +188,6 @@ fun LyricsSettings(
             onNavigateUp = navController::navigateUp,
             onNavigateHome = navController::backToMain,
             onLyricsClickChange = onLyricsClickChange,
-            onLyricsScrollChange = onLyricsScrollChange,
             onLyricsLineBlurChange = onLyricsLineBlurChange,
             onLyricsTextSizeChange = onLyricsTextSizeChange,
             onLyricsLineSpacingChange = onLyricsLineSpacingChange,

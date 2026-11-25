@@ -17,7 +17,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import moe.rukamori.archivetune.R
 import moe.rukamori.archivetune.constants.AppFontPreference
-import moe.rukamori.archivetune.constants.SplashShapePreference
 import moe.rukamori.archivetune.ui.component.EnumListPreference
 import moe.rukamori.archivetune.ui.component.PreferenceEntry
 import moe.rukamori.archivetune.ui.component.PreferenceGroup
@@ -36,15 +35,8 @@ fun AppearanceThemeSection(
         onRandomThemeOnStartupChange = actions.onRandomThemeOnStartupChange,
         onNavigatePalettePicker = actions.onNavigatePalettePicker,
         onNavigateGraphics = actions.onNavigateGraphics,
-        darkMode = state.darkMode,
-        onDarkModeChange = actions.onDarkModeChange,
-        useDarkTheme = state.useDarkTheme,
-        pureBlack = state.pureBlack,
-        onPureBlackChange = actions.onPureBlackChange,
         splashOverlayEnabled = state.splashOverlayEnabled,
         onSplashOverlayEnabledChange = actions.onSplashOverlayEnabledChange,
-        splashShapePreference = state.splashShapePreference,
-        onSplashShapePreferenceChange = actions.onSplashShapePreferenceChange,
         onNavigateCanvas = actions.onNavigateCanvas,
         fontPreference = state.fontPreference,
         onFontPreferenceChange = actions.onFontPreferenceChange,
@@ -63,15 +55,8 @@ fun AppearanceThemeSection(
     onRandomThemeOnStartupChange: (Boolean) -> Unit,
     onNavigatePalettePicker: () -> Unit,
     onNavigateGraphics: () -> Unit,
-    darkMode: DarkMode,
-    onDarkModeChange: (DarkMode) -> Unit,
-    useDarkTheme: Boolean,
-    pureBlack: Boolean,
-    onPureBlackChange: (Boolean) -> Unit,
     splashOverlayEnabled: Boolean,
     onSplashOverlayEnabledChange: (Boolean) -> Unit,
-    splashShapePreference: SplashShapePreference,
-    onSplashShapePreferenceChange: (SplashShapePreference) -> Unit,
     onNavigateCanvas: () -> Unit,
     fontPreference: AppFontPreference,
     onFontPreferenceChange: (AppFontPreference) -> Unit,
