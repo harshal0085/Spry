@@ -65,6 +65,7 @@ fun HeaderHazeBackdrop(
 
     val statusBarTop = with(LocalDensity.current) { WindowInsets.systemBars.getTop(this).toDp() }
     val effectiveHeight = (height ?: (AppBarHeight + statusBarTop)) + SettingsDimensions.HeaderFadeFeather
+    val solidFraction = 1f - SettingsDimensions.HeaderFadeFeather / effectiveHeight
 
     val hazeStyle = if (isBlurActive) {
         remember(surfaceColor, effectiveBlurRadius, effectivePureBlack) {
@@ -135,13 +136,11 @@ fun HeaderHazeBackdrop(
                             }
                         }
                         .background(
+                            // Spry: solid behind the title so scrolled rows never show through it; fades only in the feather below.
                             Brush.verticalGradient(
-                                listOf(
-                                    surfaceColor.copy(alpha = 0.95f),
-                                    surfaceColor.copy(alpha = 0.85f),
-                                    surfaceColor.copy(alpha = 0.6f),
-                                    Color.Transparent,
-                                ),
+                                0f to surfaceColor,
+                                solidFraction to surfaceColor,
+                                1f to Color.Transparent,
                             ),
                         )
                 } else {

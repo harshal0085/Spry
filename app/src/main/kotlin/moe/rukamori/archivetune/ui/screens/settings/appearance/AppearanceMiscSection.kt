@@ -95,7 +95,7 @@ fun AppearanceMiscSection(
                     when (it) {
                         NavigationTab.HOME -> stringResource(R.string.home)
                         NavigationTab.SEARCH -> stringResource(R.string.search)
-                        NavigationTab.MOODANDGENRES -> stringResource(R.string.mood_and_genres)
+                        NavigationTab.FRIENDS -> stringResource(moe.rukamori.archivetune.ui.screens.Screens.Friends.titleId)
                         NavigationTab.LIBRARY -> stringResource(R.string.filter_library)
                     }
                 },
@@ -157,15 +157,6 @@ fun AppearanceMiscSection(
                 onCheckedChange = onSwipeToSongChange,
             )
         }
-
-        item {
-            SwitchPreference(
-                title = { Text(stringResource(R.string.marquee_enabled)) },
-                description = stringResource(R.string.marquee_enabled_desc),
-                icon = { Icon(painterResource(R.drawable.text_fields), null, modifier = Modifier.size(24.dp)) },
-                checked = marqueeEnabled,
-                onCheckedChange = onMarqueeEnabledChange,
-            )
-        }
+        // Spry: no "Scrolling text" switch; Spry always ends long text in "…" (LocalMarqueeEnabled is fixed off).
     }
 }

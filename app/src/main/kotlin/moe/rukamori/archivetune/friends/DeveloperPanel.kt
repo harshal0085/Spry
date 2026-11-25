@@ -8,6 +8,12 @@ package moe.rukamori.archivetune.friends
 
 import android.content.Context
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -115,6 +121,7 @@ fun DeveloperPanel(modifier: Modifier = Modifier) {
         }
     val scope = rememberCoroutineScope()
     var draft by remember { mutableStateOf("") }
+    var naezDraft by remember { mutableStateOf("") }
     var maintenanceText by remember(config.maintenanceText) { mutableStateOf(config.maintenanceText) }
     var updateUrl by remember(config.updateUrl) { mutableStateOf(config.updateUrl) }
     var message by remember { mutableStateOf<String?>(null) }
@@ -166,6 +173,38 @@ fun DeveloperPanel(modifier: Modifier = Modifier) {
             Button(enabled = draft.isNotBlank(), onClick = { run { SpryFriends.announce(draft).also { if (it == null) draft = "" } } }) { Text("Send") }
             if (announcement != null) TextButton(onClick = { run { SpryFriends.clearAnnouncement() } }) { Text("Take down") }
         }
+
+        // ---- Naez speaks for you
+        Section("Speak as Naez")
+        Hint("Her bubble on every phone, once. Pick her face first; one person: ⋮ next to them → Message as Naez.")
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            NaezMood.entries.forEach { m ->
+                Image(
+                    painter = painterResource(m.res),
+                    contentDescription = m.name.lowercase(),
+                    modifier = Modifier
+                        .height(56.dp)
+                        .background(
+                            if (m == naezDevMood) Color.White.copy(alpha = 0.22f) else Color.Transparent,
+                            RoundedCornerShape(10.dp),
+                        )
+                        .clickable { naezDevMood = m }
+                        .padding(2.dp),
+                )
+            }
+        }
+        OutlinedTextField(
+            value = naezDraft,
+            onValueChange = { naezDraft = it.take(300) },
+            placeholder = { Text("What should Naez say?") },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Button(enabled = naezDraft.isNotBlank(), onClick = {
+            run { SpryFriends.naezSayToAll(naezDraft, naezDevMood.name).also { if (it == null) naezDraft = "" } }
+        }) { Text("Say it to everyone") }
 
         // ---- music for everyone
         Section("Music")
@@ -311,6 +350,11 @@ private fun UserRowItem(
                     menu = false
                     onAsk(Ask.Input("Alert $name", "Pops up on their phone", "") { SpryFriends.sendAlert(u, it) })
                 })
+                DropdownMenuItem(text = { Text("Message as Naez") }, onClick = {
+                    menu = false
+                    val mood = naezDevMood
+                    onAsk(Ask.Input("Naez → $name", "Shows in her bubble (face: ${mood.name.lowercase()})", "") { SpryFriends.sendAlert(u, it, asNaez = true, mood = mood.name) })
+                })
                 DropdownMenuItem(text = { Text(if (u.badge == null) "Give a badge" else "Change badge") }, onClick = {
                     menu = false
                     onAsk(Ask.Input("Badge for $name", "e.g. OG, tester, VIP (empty removes it)", u.badge.orEmpty()) { SpryFriends.setBadge(u, it) })
@@ -335,6 +379,9 @@ private fun UserRowItem(
         }
     }
 }
+
+/** The face Naez makes for messages sent from the Dev tab (shared by the everyone box and the per-person menu). */
+private var naezDevMood by androidx.compose.runtime.mutableStateOf(NaezMood.WAVE)
 
 @Composable
 private fun Section(text: String) = Text(text, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 6.dp))

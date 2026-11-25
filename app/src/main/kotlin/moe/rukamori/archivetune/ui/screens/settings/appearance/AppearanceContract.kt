@@ -33,8 +33,8 @@ enum class DarkMode {
 
 enum class NavigationTab {
     HOME,
+    FRIENDS,
     SEARCH,
-    MOODANDGENRES,
     LIBRARY,
 }
 

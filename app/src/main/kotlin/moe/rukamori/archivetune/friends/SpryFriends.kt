@@ -486,7 +486,11 @@ object SpryFriends {
         val room: RoomInfo? = null,
     )
 
-    data class Alert(val id: String, val text: String)
+    /** [naez] alerts are said by Naez in her bubble instead of a dialog; [mood] picks her sticker. */
+    data class Alert(val id: String, val text: String, val naez: Boolean = false, val mood: String? = null)
+
+    /** Something the developer made Naez say to everyone (config/naez). */
+    data class NaezLine(val text: String, val mood: String?, val at: Long)
 
     data class Command(val type: String, val at: Long, val song: FeaturedSong?)
 
@@ -511,6 +515,9 @@ object SpryFriends {
 
     private val _alerts = MutableStateFlow<List<Alert>>(emptyList())
     val alerts = _alerts.asStateFlow()
+
+    private val _naezLine = MutableStateFlow<NaezLine?>(null)
+    val naezLine = _naezLine.asStateFlow()
 
     private val _command = MutableStateFlow<Command?>(null)
     val command = _command.asStateFlow()
@@ -552,6 +559,10 @@ object SpryFriends {
                                 },
                         )
                     watchRoomHost(_config.value.room?.uid)
+                    val n = s.child("naez")
+                    _naezLine.value = n.child("text").getValue(String::class.java)?.takeIf { it.isNotBlank() }?.let {
+                        NaezLine(it, n.child("mood").getValue(String::class.java), n.child("at").getValue(Long::class.java) ?: 0L)
+                    }
                 }
 
                 override fun onCancelled(error: DatabaseError) = Unit
@@ -679,10 +690,18 @@ object SpryFriends {
     suspend fun setBadge(row: UserRow, text: String?): String? =
         adminWrite(mapOf("badges/${row.uid}" to text?.trim()?.take(16)?.ifEmpty { null }), "set the badge")
 
-    suspend fun sendAlert(row: UserRow, text: String): String? {
+    suspend fun sendAlert(row: UserRow, text: String, asNaez: Boolean = false, mood: String? = null): String? {
         val t = text.trim().take(500).ifEmpty { return "Write something first" }
         val key = db.getReference("alerts/${row.uid}").push().key ?: return "Couldn't send"
-        return adminWrite(mapOf("alerts/${row.uid}/$key" to mapOf("text" to t, "at" to ServerValue.TIMESTAMP)), "send the alert")
+        val value = mutableMapOf<String, Any>("text" to t, "at" to ServerValue.TIMESTAMP)
+        if (asNaez) { value["naez"] = true; mood?.let { value["mood"] = it } }
+        return adminWrite(mapOf("alerts/${row.uid}/$key" to value), "send the alert")
+    }
+
+    /** Naez says [text] on everyone's phone (each phone shows a given line once). */
+    suspend fun naezSayToAll(text: String, mood: String?): String? {
+        val t = text.trim().take(300).ifEmpty { return "Write something first" }
+        return adminWrite(mapOf("config/naez" to mapOf("text" to t, "mood" to mood, "at" to ServerValue.TIMESTAMP)), "make Naez speak")
     }
 
     /** Makes [row] leave whatever listening session they're in. */
@@ -794,7 +813,11 @@ object SpryFriends {
             if (_isAdmin.value) publishAllUsers()
         }
         listen(db.getReference("alerts/$me")) { s ->
-            _alerts.value = s.children.mapNotNull { c -> c.child("text").getValue(String::class.java)?.let { Alert(c.key!!, it) } }
+            _alerts.value = s.children.mapNotNull { c ->
+                c.child("text").getValue(String::class.java)?.let {
+                    Alert(c.key!!, it, c.child("naez").getValue(Boolean::class.java) == true, c.child("mood").getValue(String::class.java))
+                }
+            }
         }
         listen(db.getReference("commands/$me")) { s ->
             val type = s.child("type").getValue(String::class.java)

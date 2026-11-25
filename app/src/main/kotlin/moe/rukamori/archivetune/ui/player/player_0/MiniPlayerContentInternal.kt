@@ -35,6 +35,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -93,6 +95,8 @@ internal fun MiniPlayerContentInternal(
         modifier = modifier
             .fillMaxWidth()
             .height(MiniPlayerHeight)
+            // Spry: tell Naez where the mini player's top edge is, so she stands on it wherever it moves
+            .onGloballyPositioned { moe.rukamori.archivetune.friends.NaezAnchor.miniTop = it.boundsInRoot().top }
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,

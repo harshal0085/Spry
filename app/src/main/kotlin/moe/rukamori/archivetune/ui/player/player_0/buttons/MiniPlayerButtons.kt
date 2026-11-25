@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.SkipPrevious
@@ -92,6 +94,8 @@ fun MiniPlayerButtons(
         Box(
             modifier = Modifier
                 .size(centerBoxSize)
+                // Spry: Naez stands centred above this button
+                .onGloballyPositioned { moe.rukamori.archivetune.friends.NaezAnchor.playCenterX = it.boundsInRoot().center.x }
                 .background(Color.White.copy(alpha = CenterBgAlpha), CircleShape)
                 .border(1.dp, Color.White.copy(alpha = CenterBorderAlpha), CircleShape)
                 .clip(CircleShape)

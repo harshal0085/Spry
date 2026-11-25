@@ -23,14 +23,17 @@ class YouTubeQueue(
     private var continuation: String? = null
 
     override suspend fun getInitialStatus(): Queue.Status {
+        // Spry: one failed request used to leave the queue at a single song (Next did nothing), so retry briefly.
         val nextResult =
             withContext(IO) {
-                YouTube
-                    .next(
-                        endpoint = endpoint,
-                        continuation = continuation,
-                        followAutomixPreview = followAutomixPreview,
-                    ).getOrThrow()
+                suspend fun fetch() = YouTube.next(endpoint = endpoint, continuation = continuation, followAutomixPreview = followAutomixPreview)
+                var result = fetch()
+                for (wait in longArrayOf(800L, 2500L)) {
+                    if (result.isSuccess) break
+                    kotlinx.coroutines.delay(wait)
+                    result = fetch()
+                }
+                result.getOrThrow()
             }
         endpoint = nextResult.endpoint
         continuation = nextResult.continuation

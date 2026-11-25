@@ -179,7 +179,8 @@ internal fun AccountSettingsContent(
             Box(modifier = Modifier.align(Alignment.TopCenter)) {
                 HeaderHazeBackdrop(
                     progress = headerProgress,
-                    hasCollapsibleHeader = true,
+                    // Spry: always solid, so the profile name never scrolls up under the status bar.
+                    hasCollapsibleHeader = false,
                     hazeState = hazeState,
                     alwaysShowFallback = true,
                     modifier = Modifier.align(Alignment.TopCenter),

@@ -50,7 +50,7 @@ internal fun rememberMiniHazeStyle(
     // Spry: dark glass tinted by the playing song.
     val tintColor = androidx.compose.ui.graphics.lerp(moe.rukamori.archivetune.ui.theme.LocalSongColor.current, Color(0xFF07060A), 0.7f)
     val defaultContainer = tintColor
-    val fixedTintAlpha = 0.6f
+    val fixedTintAlpha = 0.94f // Spry: near-solid, so the page doesn't show through the mini player
 
     return remember(tintColor, blurRadius, pureBlack, defaultContainer) {
         val tintEffect = HazeColorEffect.tint(tintColor.copy(alpha = fixedTintAlpha))
@@ -67,7 +67,7 @@ internal fun rememberMiniHazeStyle(
 @Composable
 internal fun rememberBackgroundGradient(gradientColor: Int): Brush {
     val color = androidx.compose.ui.graphics.lerp(moe.rukamori.archivetune.ui.theme.LocalSongColor.current, Color(0xFF07060A), 0.7f)
-        .copy(alpha = 0.7f)
+        .copy(alpha = 1f) // Spry: solid mini player (it was 70% see-through with blur off)
 
     return remember(color) {
         Brush.verticalGradient(

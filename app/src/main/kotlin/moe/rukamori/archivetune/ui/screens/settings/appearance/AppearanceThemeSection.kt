@@ -113,21 +113,7 @@ fun AppearanceThemeSection(
             )
         }
 
-        item {
-            DarkModeSelector(
-                darkMode = darkMode,
-                onDarkModeChange = onDarkModeChange,
-            )
-        }
-
-        item(visible = useDarkTheme) {
-            SwitchPreference(
-                title = { Text(stringResource(R.string.pure_black)) },
-                icon = { Icon(painterResource(R.drawable.contrast), null, modifier = Modifier.size(24.dp)) },
-                checked = pureBlack,
-                onCheckedChange = onPureBlackChange,
-            )
-        }
+        // Spry: no Dark theme / Pure black rows; Spry is always dark and song-tinted (YumaApp forces both).
 
         item {
             PreferenceEntry(
@@ -146,23 +132,6 @@ fun AppearanceThemeSection(
                 icon = { Icon(painterResource(R.drawable.auto_awesome), null, modifier = Modifier.size(24.dp)) },
                 checked = splashOverlayEnabled,
                 onCheckedChange = onSplashOverlayEnabledChange,
-            )
-        }
-
-        item(visible = splashOverlayEnabled) {
-            EnumListPreference(
-                title = { Text(stringResource(R.string.splash_shape_preference)) },
-                description = stringResource(R.string.splash_shape_preference_desc),
-                icon = { Icon(painterResource(R.drawable.bolt), null, modifier = Modifier.size(24.dp)) },
-                selectedValue = splashShapePreference,
-                onValueSelected = onSplashShapePreferenceChange,
-                valueText = {
-                    when (it) {
-                        SplashShapePreference.LOGO -> stringResource(R.string.splash_shape_logo)
-                        SplashShapePreference.BOLT -> stringResource(R.string.splash_shape_bolt)
-                        SplashShapePreference.RANDOM -> stringResource(R.string.splash_shape_random)
-                    }
-                },
             )
         }
 

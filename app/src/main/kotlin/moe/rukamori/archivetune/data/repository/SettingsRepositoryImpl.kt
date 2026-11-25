@@ -7,6 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import moe.rukamori.archivetune.constants.AppFontPreference
@@ -112,8 +113,9 @@ class SettingsRepositoryImpl @Inject constructor(
         sharedPrefs.edit().putBoolean("is_first_launch", isFirst).apply()
     }
 
-    override fun isSearchHistoryPaused(): Boolean =
-        prefs.getBoolean("pause_search_history", false)
+    // Spry: read the same DataStore key the Privacy switch writes (this used to read an old SharedPreferences key nothing set).
+    override suspend fun isSearchHistoryPaused(): Boolean =
+        context.dataStore.data.first()[moe.rukamori.archivetune.constants.PauseSearchHistoryKey] ?: false
 
     override fun isImmersiveEnabled(): Boolean =
         prefs.getBoolean("immersive_enabled", false)

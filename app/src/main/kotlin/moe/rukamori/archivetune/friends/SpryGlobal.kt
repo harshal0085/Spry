@@ -165,7 +165,7 @@ fun SpryGlobalHost() {
     }
 
     // a personal message from the developer
-    val alert = alerts.firstOrNull() ?: return
+    val alert = alerts.firstOrNull { !it.naez } ?: return // Naez's own alerts show in her bubble (NaezHost)
     AlertDialog(
         onDismissRequest = { SpryFriends.dismissAlert(alert) },
         title = { Text("From the developer") },

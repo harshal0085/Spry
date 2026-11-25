@@ -240,19 +240,7 @@ internal fun CustomizationPage(
                     )
                 }
 
-                item {
-                    moe.rukamori.archivetune.ui.screens.settings.DarkModeSelector(
-                        darkMode = darkMode,
-                        onDarkModeChange = onDarkModeChange
-                    )
-                }
-
-                item {
-                    moe.rukamori.archivetune.ui.screens.settings.HomeBackgroundSelector(
-                        homeBackgroundStyle = homeBackgroundStyle,
-                        onHomeBackgroundStyleChange = onHomeBackgroundStyleChange
-                    )
-                }
+                // Spry: no dark-mode or home-background pickers here; Spry is always dark with the song-colour backdrop.
 
                 item {
                     moe.rukamori.archivetune.ui.screens.settings.player.PlaybackSourceSelector(

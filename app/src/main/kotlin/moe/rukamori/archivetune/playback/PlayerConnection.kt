@@ -249,6 +249,22 @@ class PlayerConnection(
             service.requestTogetherControl(moe.rukamori.archivetune.together.ControlAction.SkipNext)
             return
         }
+        // Spry: nothing queued after this song (its radio failed to load) -> load a radio for it now, then skip into it.
+        if (!player.hasNextMediaItem() && player.repeatMode == Player.REPEAT_MODE_OFF && player.currentMediaItem != null) {
+            service.startRadioSeamlessly()
+            scope.launch {
+                repeat(50) {
+                    if (player.hasNextMediaItem()) {
+                        player.seekToNext()
+                        player.prepare()
+                        player.playWhenReady = true
+                        return@launch
+                    }
+                    kotlinx.coroutines.delay(200)
+                }
+            }
+            return
+        }
         player.seekToNext()
         player.prepare()
         player.playWhenReady = true

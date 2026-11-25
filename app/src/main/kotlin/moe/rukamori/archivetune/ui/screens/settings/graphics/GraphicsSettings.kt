@@ -93,7 +93,7 @@ fun GraphicsSettings(navController: NavController) {
 
     val supportedHighestFps = rememberSupportedHighestFps()
     val isHighRefreshRateSupported = supportedHighestFps > GraphicsContract.HIGH_REFRESH_RATE_THRESHOLD_FPS
-    ApplyRefreshRate(isEnabled = forceHighRefreshRate && isHighRefreshRateSupported, targetFps = supportedHighestFps)
+    // Spry: the refresh rate is applied app-wide in YumaApp (here it reset the moment you left this screen).
 
     val state = GraphicsSettingsUiState(
         blurNavBar = blurNavBar,
@@ -153,16 +153,8 @@ internal fun GraphicsSettingsScreen(
         onBackLongClick = actions.onNavigateHome,
         modifier = modifier,
     ) {
-        DeviceLoadHudCard(
-            fraction = loadFraction,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp)
-                .padding(horizontal = 16.dp)
-                .padding(bottom = 8.dp)
-                .height(110.dp),
-        )
-
+        // Spry: no "Render load" meter (it was an estimate from these switches, not a real GPU reading)
+        // and no Home background group (Spry's song-colour backdrop replaced those effects; see ScreenBackground).
         PreferenceGroup(title = stringResource(R.string.settings_graphics_blur_group)) {
                 item {
                     SwitchPreference(
@@ -177,55 +169,6 @@ internal fun GraphicsSettingsScreen(
                     BlurRadiusSliderItem(
                         value = state.blurRadius,
                         onValueChangeFinished = actions.onBlurRadiusChange,
-                    )
-                }
-            }
-
-            PreferenceGroup(title = stringResource(R.string.home_background)) {
-                item {
-                    HomeBackgroundSelector(
-                        homeBackgroundStyle = state.homeBackgroundStyle,
-                        onHomeBackgroundStyleChange = actions.onHomeBackgroundStyleChange,
-                    )
-                }
-                item {
-                    SwitchPreference(
-                        title = { Text(stringResource(R.string.random_home_background_on_startup)) },
-                        description = stringResource(R.string.random_home_background_on_startup_desc),
-                        icon = { Icon(painterResource(R.drawable.shuffle), null, modifier = Modifier.size(24.dp)) },
-                        checked = state.randomHomeBackgroundOnStartup,
-                        onCheckedChange = actions.onRandomHomeBackgroundOnStartupChange,
-                    )
-                }
-
-                val isProceduralBackground =
-                    state.homeBackgroundStyle != HomeBackgroundStyle.OFF &&
-                        state.homeBackgroundStyle != HomeBackgroundStyle.TONAL
-
-                item(visible = isProceduralBackground) {
-                    SwitchPreference(
-                        title = { Text(stringResource(R.string.home_background_parallax)) },
-                        icon = { Icon(painterResource(R.drawable.speed), null, modifier = Modifier.size(24.dp)) },
-                        checked = state.homeBackgroundParallaxEnabled,
-                        onCheckedChange = actions.onHomeBackgroundParallaxEnabledChange,
-                    )
-                }
-                item(visible = isProceduralBackground && state.homeBackgroundParallaxEnabled) {
-                    HomeBackgroundSliderItem(
-                        title = stringResource(R.string.home_background_parallax_strength),
-                        value = state.homeBackgroundParallaxStrength,
-                        onValueChangeFinished = actions.onHomeBackgroundParallaxStrengthChange,
-                        valueRange = GraphicsContract.HOME_BACKGROUND_PARALLAX_RANGE,
-                        valueText = { strength -> String.format(Locale.US, "%.1f", strength) },
-                    )
-                }
-                item(visible = isProceduralBackground) {
-                    HomeBackgroundSliderItem(
-                        title = stringResource(R.string.home_background_brightness),
-                        value = state.homeBackgroundBrightness,
-                        onValueChangeFinished = actions.onHomeBackgroundBrightnessChange,
-                        valueRange = GraphicsContract.HOME_BACKGROUND_BRIGHTNESS_RANGE,
-                        valueText = { brightness -> "${(brightness * 100).roundToInt()}%" },
                     )
                 }
             }

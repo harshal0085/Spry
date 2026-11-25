@@ -210,6 +210,15 @@ fun ScaffoldShell(
                             }
                         }
 
+                        // Spry: Naez leans on the mini player. Drawn before the player so her waist tucks behind it;
+                        // hidden while the full player is open.
+                        if (splashDone) {
+                            moe.rukamori.archivetune.friends.NaezHost(
+                                playerExpansion = playerExpansionFraction,
+                                modifier = Modifier.align(androidx.compose.ui.Alignment.BottomEnd),
+                            )
+                        }
+
                         PlayerOverlayHost(
                             modifier = Modifier.fillMaxSize(),
                             navController = navController,

@@ -198,14 +198,7 @@ internal fun LyricsDisplaySection(
             )
         }
 
-        item {
-            SwitchPreference(
-                title = { Text(stringResource(R.string.lyrics_auto_scroll)) },
-                icon = { Icon(painterResource(R.drawable.lyrics), null) },
-                checked = lyricsScroll,
-                onCheckedChange = onLyricsScrollChange,
-            )
-        }
+        // Spry: no "Auto scroll" switch; the lyrics view always follows the song and never read it.
 
         item {
             SwitchPreference(

@@ -156,6 +156,12 @@ fun YumaApp(
     val useDarkTheme = true
     val pureBlack = false // Spry Signal: charcoal ground, not AMOLED black
 
+    val forceHighRefreshRate by rememberPreference(moe.rukamori.archivetune.constants.ForceHighRefreshRateKey, defaultValue = false)
+    moe.rukamori.archivetune.ui.screens.settings.ApplyRefreshRate(
+        isEnabled = forceHighRefreshRate,
+        targetFps = moe.rukamori.archivetune.ui.screens.settings.rememberSupportedHighestFps(),
+    )
+
     val dynamicThemeColorState =
         rememberDynamicThemeColor(
             activity = activity,

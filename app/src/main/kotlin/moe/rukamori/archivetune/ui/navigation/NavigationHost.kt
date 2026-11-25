@@ -102,8 +102,9 @@ fun NavigationHost(
             } else {
                 when (tabOpenedFromShortcut ?: defaultOpenTab) {
                     NavigationTab.HOME -> Screens.Home.route
+                    NavigationTab.FRIENDS -> Screens.Friends.route
+                    NavigationTab.SEARCH -> Screens.Search.route
                     NavigationTab.LIBRARY -> Screens.Library.route
-                    else -> Screens.Home.route
                 }
             },
         enterTransition = {
