@@ -225,9 +225,13 @@ fun FriendsCard(
                                 }
                             }
                         }
+                        val inSession = service?.togetherSessionState?.collectAsState()?.value is moe.rukamori.archivetune.together.TogetherSessionState.Joined
                         if (f.online) {
-                            OutlinedButton(enabled = service != null, onClick = { service?.let { SpryFriends.requestVibe(f, it) } }) { Text("Join") }
-                            TextButton(onClick = { message = SpryFriends.invite(f) }) { Text("Invite") }
+                            // Already listening together: Leave (below) is the only action, so the name gets the room.
+                            if (!inSession) {
+                                OutlinedButton(enabled = service != null, onClick = { service?.let { SpryFriends.requestVibe(f, it) } }) { Text("Join") }
+                                TextButton(onClick = { message = SpryFriends.invite(f) }) { Text("Invite") }
+                            }
                         } else {
                             TextButton(onClick = { scope.launch { SpryFriends.removeFriend(f.uid) } }) {
                                 Text("Remove", color = MaterialTheme.colorScheme.onSurfaceVariant)

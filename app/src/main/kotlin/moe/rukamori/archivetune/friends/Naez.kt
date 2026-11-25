@@ -68,7 +68,14 @@ enum class NaezMood(val res: Int) {
 }
 
 /** One bubble. [sticky] bubbles wait for a tap (the intro); the rest fade on their own. */
-private data class NaezSay(val text: String, val mood: NaezMood, val sticky: Boolean = false, val onDone: (() -> Unit)? = null)
+/** [onOpen]: tapping this bubble does something (e.g. opens a chat) instead of just closing it. */
+private data class NaezSay(
+    val text: String,
+    val mood: NaezMood,
+    val sticky: Boolean = false,
+    val onDone: (() -> Unit)? = null,
+    val onOpen: (() -> Unit)? = null,
+)
 
 private object Lines {
     fun <T> List<T>.any1() = this[Random.nextInt(size)]
@@ -163,7 +170,11 @@ private val MILESTONES = setOf(10, 50, 100, 250, 500, 1000, 2500, 5000)
 private const val AUTO_GAP_MS = 90_000L
 
 @Composable
-fun NaezHost(playerExpansion: () -> Float, modifier: Modifier = Modifier) {
+fun NaezHost(
+    playerExpansion: () -> Float,
+    modifier: Modifier = Modifier,
+    onOpenChat: (uid: String, username: String) -> Unit = { _, _ -> },
+) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("naez", Context.MODE_PRIVATE) }
     val connection = LocalPlayerConnection.current
@@ -202,7 +213,7 @@ fun NaezHost(playerExpansion: () -> Float, modifier: Modifier = Modifier) {
     val current = queue.firstOrNull()
     LaunchedEffect(current) {
         if (current == null || current.sticky) return@LaunchedEffect
-        delay(3500L + current.text.length * 45L)
+        delay(3500L + current.text.length * 45L + if (current.onOpen != null) 6000L else 0L)
         if (queue.firstOrNull() === current) queue.removeAt(0).onDone?.invoke()
     }
 
@@ -255,6 +266,31 @@ fun NaezHost(playerExpansion: () -> Float, modifier: Modifier = Modifier) {
         friends.firstOrNull { it.online && it.uid !in before }?.let { sayAuto(Lines.friendOnline(it.username)) }
     }
 
+    // new chat messages: "@name says…", tap the bubble to open that chat
+    val me = SpryFriends.user.collectAsState().value?.uid
+    friends.forEach { f ->
+        androidx.compose.runtime.key(f.uid) {
+            val msgs by remember(f.uid) { SpryChat.messages(f.uid) }.collectAsState(initial = null)
+            LaunchedEffect(msgs) {
+                val last = msgs?.maxByOrNull { it.at } ?: return@LaunchedEffect
+                val seenKey = "msg_${f.uid}"
+                val seen = prefs.getLong(seenKey, -1L)
+                if (last.at > seen) prefs.edit().putLong(seenKey, last.at).apply()
+                // first look at this chat, old messages, my own messages, or already reading this chat: stay quiet
+                if (seen < 0 || last.at <= seen || last.from == me || NaezAnchor.awayScreens > 0) return@LaunchedEffect
+                val preview = last.text.replace('\n', ' ').let { if (it.length > 60) it.take(60) + "…" else it }
+                queue.removeAll { it.onOpen != null && it.text.startsWith("@${f.username} ") } // one bubble per friend
+                queue.add(
+                    NaezSay(
+                        text = "@${f.username} says: \"$preview\"\nTap to read~",
+                        mood = NaezMood.WAVE,
+                        onOpen = { onOpenChat(f.uid, f.username) },
+                    ),
+                )
+            }
+        }
+    }
+
     // the developer speaking through her: to everyone (config/naez) or to this phone (a naez alert)
     val devLine by SpryFriends.naezLine.collectAsState()
     LaunchedEffect(devLine) {
@@ -273,7 +309,7 @@ fun NaezHost(playerExpansion: () -> Float, modifier: Modifier = Modifier) {
     // taps: dismiss/advance the bubble, or poke her (tap fast enough and she snaps)
     val taps = remember { ArrayDeque<Long>() }
     fun onTap() {
-        queue.firstOrNull()?.let { queue.removeAt(0); it.onDone?.invoke(); return }
+        queue.firstOrNull()?.let { queue.removeAt(0); it.onDone?.invoke(); it.onOpen?.invoke(); return }
         val now = System.currentTimeMillis()
         taps.addLast(now)
         while (taps.isNotEmpty() && now - taps.first() > 4000) taps.removeFirst()
@@ -285,7 +321,7 @@ fun NaezHost(playerExpansion: () -> Float, modifier: Modifier = Modifier) {
         }
     }
 
-    if (hidden) return
+    if (hidden || NaezAnchor.awayScreens > 0) return
     val bottom = LocalPlayerAwareWindowInsets.current.asPaddingValues().calculateBottomPadding()
     val hasSong = connection?.mediaMetadata?.collectAsState()?.value != null
     // No mini player to stand on: only come out while she has something to say (e.g. the intro).
@@ -358,6 +394,9 @@ object NaezAnchor {
 
     /** The mini player's play/pause button centre x in root pixels; she stands centred over it. */
     var playCenterX by mutableStateOf(Float.NaN)
+
+    /** Screens open right now where she'd be in the way (e.g. chat); she hides while this is above 0. */
+    var awayScreens by mutableStateOf(0)
 }
 
 // half-body art (344x410 px, kept full size so she stays sharp); she stands on the mini player's top edge

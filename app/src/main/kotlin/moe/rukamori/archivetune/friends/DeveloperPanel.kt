@@ -293,7 +293,7 @@ fun DeveloperPanel(modifier: Modifier = Modifier) {
                     Button(onClick = {
                         ask = null
                         run { a.action(text) }
-                    }) { Text(if (a.title.startsWith("Alert")) "Send" else "Save") }
+                    }) { Text(if (a.title.startsWith("Alert") || a.title.startsWith("Naez")) "Send" else "Save") }
                 },
                 dismissButton = { TextButton(onClick = { ask = null }) { Text("Cancel") } },
             )

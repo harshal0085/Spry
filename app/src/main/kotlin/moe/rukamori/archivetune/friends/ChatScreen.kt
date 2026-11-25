@@ -83,6 +83,11 @@ fun ChatScreen(
     friendUid: String,
     friendName: String,
 ) {
+    // Naez steps away in chats: she'd stand on the Send button.
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        NaezAnchor.awayScreens++
+        onDispose { NaezAnchor.awayScreens-- }
+    }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val me = SpryFriends.user.collectAsState().value?.uid

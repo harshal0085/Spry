@@ -203,6 +203,7 @@ fun ScaffoldShell(
                             moe.rukamori.archivetune.friends.NaezHost(
                                 playerExpansion = playerExpansionFraction,
                                 modifier = Modifier.align(androidx.compose.ui.Alignment.BottomEnd),
+                                onOpenChat = { uid, name -> navController.navigate("chat/$uid/${android.net.Uri.encode(name)}") },
                             )
                         }
 
