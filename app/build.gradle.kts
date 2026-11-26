@@ -53,8 +53,8 @@ android {
     applicationId = "com.spry.player" // fork of re.muwmix.yumaplayer; own ID installs beside the official app
         minSdk = 26
         targetSdk = 37
-        versionCode = 9
-        versionName = "1.0.0"
+        versionCode = 10
+        versionName = "1.1.0"
 
         manifestPlaceholders["appName"] = "@string/app_name"
 

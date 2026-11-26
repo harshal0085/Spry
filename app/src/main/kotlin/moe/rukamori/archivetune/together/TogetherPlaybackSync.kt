@@ -16,7 +16,8 @@ internal object TogetherGuestLocalPause {
 }
 
 internal object TogetherPlaybackSync {
-    const val BroadcastIntervalMs = 500L
+    // Spry: host changes (skips, accepted requests) wait for this tick; SpryTunnel drops unchanged repeats, so faster is cheap.
+    const val BroadcastIntervalMs = 200L
 
     private const val OnlineEstimatedDeliveryMs = 350L
     private const val MaxRemoteAgeMs = 5_000L

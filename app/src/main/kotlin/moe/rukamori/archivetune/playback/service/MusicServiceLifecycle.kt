@@ -770,7 +770,7 @@ class MusicServiceLifecycle(
     }
 
     fun onTaskRemoved(rootIntent: Intent?) {
-        val stopMusicOnTaskClearEnabled = delegate.dataStore.get(StopMusicOnTaskClearKey, false)
+        val stopMusicOnTaskClearEnabled = delegate.dataStore.get(StopMusicOnTaskClearKey, true)
 
         try {
             val isHostSessionActive = delegate.isTogetherHostSessionActive()

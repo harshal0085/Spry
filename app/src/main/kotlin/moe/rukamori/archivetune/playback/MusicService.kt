@@ -124,6 +124,7 @@ import moe.rukamori.archivetune.utils.ProxyAuth
 import moe.rukamori.archivetune.utils.SyncUtils
 import moe.rukamori.archivetune.utils.YTPlayerUtils
 import moe.rukamori.archivetune.utils.dataStore
+import moe.rukamori.archivetune.utils.get
 import moe.rukamori.archivetune.utils.isLocalMediaId
 import moe.rukamori.archivetune.utils.reportException
 import moe.rukamori.archivetune.widget.LoadWidgetInsightsUseCase
@@ -782,6 +783,13 @@ class MusicService :
     override fun onTaskRemoved(rootIntent: Intent?) {
         super.onTaskRemoved(rootIntent)
         serviceLifecycle.onTaskRemoved(rootIntent)
+        // Spry: swiping Spry out of recents closes it. stopSelf() alone leaves the service alive while
+        // Media3's notification controller is still bound, so also let Media3 drop the notification and stop.
+        if (dataStore.get(moe.rukamori.archivetune.constants.StopMusicOnTaskClearKey, true)) {
+            runCatching { pauseAllPlayersAndStopSelf() }
+            // An in-process binding still keeps the service up, so end the process once the stop above has run.
+            android.os.Handler(mainLooper).postDelayed({ android.os.Process.killProcess(android.os.Process.myPid()) }, 500)
+        }
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession =

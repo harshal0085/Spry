@@ -93,7 +93,7 @@ class MusicServiceBinding(
             if (!activity.isFinishing) {
                 false
             } else {
-                activity.dataStore.get(StopMusicOnTaskClearKey, false)
+                activity.dataStore.get(StopMusicOnTaskClearKey, true)
             }
 
         if (shouldStopOnTaskClear) {
